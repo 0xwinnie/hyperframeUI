@@ -1,38 +1,36 @@
-import { useCallback, useRef, type ChangeEvent } from 'react';
-import { ChevronDown, Maximize, Pause, Play, SkipBack, SkipFwd, StepBack, StepFwd, Volume } from '../icons';
+import { useCallback, type ChangeEvent } from 'react';
+import {
+  ChevronDown,
+  Maximize,
+  Pause,
+  Play,
+  SkipBack,
+  SkipFwd,
+  StepBack,
+  StepFwd,
+  Volume,
+} from '../icons';
+import { usePlaybackStore } from '../store/playback';
 
-// Self-rendered transport bar. The player's underlying <hyperframes-player>
-// exposes `controls` but we want the design-handoff chrome rather than
-// HeyGen's built-in overlay, so we use its imperative API instead.
+// Self-rendered transport bar. Reads playback state from the store and
+// dispatches actions; no longer takes props.
 
-interface TransportBarProps {
-  ready: boolean;
-  paused: boolean;
-  currentTime: number;
-  duration: number;
-  onPlayPause: () => void;
-  onSeek: (seconds: number) => void;
-  onStep: (deltaSeconds: number) => void;
-}
-
-export function TransportBar({
-  ready,
-  paused,
-  currentTime,
-  duration,
-  onPlayPause,
-  onSeek,
-  onStep,
-}: TransportBarProps): JSX.Element {
-  const scrubRef = useRef<HTMLInputElement | null>(null);
+export function TransportBar(): JSX.Element {
+  const ready = usePlaybackStore((s) => s.ready);
+  const paused = usePlaybackStore((s) => s.paused);
+  const currentTime = usePlaybackStore((s) => s.currentTime);
+  const duration = usePlaybackStore((s) => s.duration);
+  const toggle = usePlaybackStore((s) => s.toggle);
+  const seek = usePlaybackStore((s) => s.seek);
+  const step = usePlaybackStore((s) => s.step);
 
   const onScrub = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const fraction = Number.parseFloat(event.target.value);
       if (!Number.isFinite(fraction)) return;
-      onSeek(fraction * duration);
+      seek(fraction * duration);
     },
-    [duration, onSeek],
+    [duration, seek],
   );
 
   const fraction = duration > 0 ? Math.min(currentTime / duration, 1) : 0;
@@ -44,7 +42,7 @@ export function TransportBar({
           type="button"
           className="transport__icon-btn"
           title="Skip back 10s"
-          onClick={() => onStep(-10)}
+          onClick={() => step(-10)}
           disabled={!ready}
         >
           <SkipBack size={14} />
@@ -53,7 +51,7 @@ export function TransportBar({
           type="button"
           className="transport__icon-btn"
           title="Step back 1 frame"
-          onClick={() => onStep(-1 / 30)}
+          onClick={() => step(-1 / 30)}
           disabled={!ready}
         >
           <StepBack size={14} />
@@ -61,7 +59,7 @@ export function TransportBar({
         <button
           type="button"
           className="transport__play"
-          onClick={onPlayPause}
+          onClick={toggle}
           title={paused ? 'Play' : 'Pause'}
           disabled={!ready}
         >
@@ -71,7 +69,7 @@ export function TransportBar({
           type="button"
           className="transport__icon-btn"
           title="Step forward 1 frame"
-          onClick={() => onStep(1 / 30)}
+          onClick={() => step(1 / 30)}
           disabled={!ready}
         >
           <StepFwd size={14} />
@@ -80,7 +78,7 @@ export function TransportBar({
           type="button"
           className="transport__icon-btn"
           title="Skip forward 10s"
-          onClick={() => onStep(10)}
+          onClick={() => step(10)}
           disabled={!ready}
         >
           <SkipFwd size={14} />
@@ -94,7 +92,6 @@ export function TransportBar({
       </div>
 
       <input
-        ref={scrubRef}
         type="range"
         min={0}
         max={1}

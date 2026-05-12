@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { LeftRail, type RailTab } from './components/LeftRail';
 import { PlayerStage } from './components/PlayerStage';
 import { SidePanel } from './components/SidePanel';
-import { TimelinePlaceholder } from './components/TimelinePlaceholder';
+import { Timeline } from './components/Timeline/Timeline';
 import { TopBar } from './components/TopBar';
 import { Welcome } from './components/Welcome';
 import { useProjectStore } from './store/project';
@@ -47,7 +47,7 @@ export function App(): JSX.Element {
         <SidePanel tab={tab} />
         <PlayerStage />
       </div>
-      <TimelinePlaceholder />
+      <Timeline />
     </div>
   );
 }

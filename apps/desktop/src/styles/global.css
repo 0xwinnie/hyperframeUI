@@ -1394,17 +1394,385 @@ button:focus-visible,
   color: var(--fg-1);
 }
 
-.timeline-placeholder {
+/* ── Timeline ────────────────────────────────────────────────────────── */
+
+.timeline {
   flex-shrink: 0;
-  height: 220px;
+  height: 280px;
   background: var(--bg-1);
   border-top: 1px solid var(--line-2);
   display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.timeline--empty {
   align-items: center;
   justify-content: center;
 }
 
-.timeline-placeholder__label {
+.timeline__empty {
   font-size: 11px;
   color: var(--fg-4);
+}
+
+.tl-toolbar {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line-1);
+}
+
+.tl-toolbar__label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+
+.tl-toolbar__zoom {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tl-toolbar__zoom-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 0;
+  color: var(--fg-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.tl-toolbar__zoom-btn:hover {
+  color: var(--fg-1);
+  background: var(--bg-2);
+}
+
+.tl-toolbar__zoom-range {
+  width: 110px;
+  height: 4px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--bg-3);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.tl-toolbar__zoom-range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--bg-3);
+  border-radius: 2px;
+}
+
+.tl-toolbar__zoom-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: -4px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.tl-toolbar__zoom-value {
+  font-size: 10px;
+  color: var(--fg-4);
+  min-width: 56px;
+  text-align: right;
+}
+
+.timeline__scroller {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  position: relative;
+}
+
+.timeline__inner {
+  position: relative;
+  min-width: 100%;
+  /* Width set inline = composition duration × zoom + padding */
+}
+
+/* ── Ruler ───────────────────────────────────────────────────────────── */
+
+.tl-ruler {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  /* Indent matches the track header column so ticks align with clip lane. */
+  margin-left: 110px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tl-ruler__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-2);
+  pointer-events: none;
+}
+
+.tl-ruler__tick.is-major {
+  background: var(--line-3);
+  top: 4px;
+}
+
+.tl-ruler__label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  font-size: 9px;
+  color: var(--fg-4);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Track header + lane ─────────────────────────────────────────────── */
+
+.timeline__tracks {
+  display: flex;
+  flex-direction: column;
+}
+
+.tl-track {
+  display: flex;
+  height: 56px;
+  border-bottom: 1px solid var(--line-1);
+}
+
+.tl-track:last-child {
+  border-bottom: 0;
+}
+
+.tl-track__header {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 110px;
+  flex-shrink: 0;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 0;
+}
+
+.tl-track__color {
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.tl-track__header--accent .tl-track__color {
+  background: var(--accent);
+}
+.tl-track__header--violet .tl-track__color {
+  background: var(--violet);
+}
+.tl-track__header--green .tl-track__color {
+  background: var(--green);
+}
+.tl-track__header--amber .tl-track__color {
+  background: var(--amber);
+}
+
+.tl-track__label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tl-track__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.tl-track__count {
+  font-size: 9px;
+  color: var(--fg-4);
+}
+
+.tl-track__icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: transparent;
+  border: 0;
+  color: var(--fg-4);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tl-track__icon:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.tl-track__lane {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-1);
+}
+
+/* ── Clips ───────────────────────────────────────────────────────────── */
+
+.tl-clip {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  border-radius: var(--r-sm);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  font: inherit;
+  color: var(--fg-1);
+  display: flex;
+  align-items: center;
+  transition: box-shadow var(--t-fast), transform var(--t-fast);
+}
+
+.tl-clip__label {
+  flex: 1;
+  min-width: 0;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: left;
+  pointer-events: none;
+}
+
+.tl-clip__handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+.tl-clip__handle--left {
+  left: 0;
+  cursor: ew-resize;
+}
+
+.tl-clip__handle--right {
+  right: 0;
+  cursor: ew-resize;
+}
+
+.tl-clip:hover .tl-clip__handle {
+  opacity: 1;
+}
+
+.tl-clip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tl-clip.is-selected {
+  box-shadow: 0 0 0 1.5px var(--accent), 0 4px 14px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+}
+
+/* Track-kind / color variants */
+
+.tl-clip--a-roll,
+.tl-clip--accent {
+  background: linear-gradient(180deg, var(--accent-2), var(--accent));
+  color: #fff;
+}
+
+.tl-clip--b-roll,
+.tl-clip--violet {
+  background: linear-gradient(180deg, #a89dd1, #7d72a3);
+  color: #fff;
+}
+
+.tl-clip--caption,
+.tl-clip--amber {
+  background: linear-gradient(180deg, #d9b366, #b8924c);
+  color: #fff;
+}
+
+.tl-clip--caption .tl-clip__label {
+  font-style: italic;
+}
+
+.tl-clip--music,
+.tl-clip--sfx,
+.tl-clip--green {
+  background: rgba(134, 181, 154, 0.18);
+  border: 1px solid rgba(134, 181, 154, 0.40);
+  color: var(--green);
+}
+
+.tl-clip--overlay {
+  background: var(--bg-3);
+  border: 1px solid var(--line-3);
+  color: var(--fg-2);
+}
+
+/* ── Playhead ────────────────────────────────────────────────────────── */
+
+.tl-playhead {
+  position: absolute;
+  top: 0;
+  width: 0;
+  pointer-events: none;
+  z-index: 4;
+  /* Indent past the track header column. */
+  margin-left: 110px;
+}
+
+.tl-playhead__flag {
+  position: absolute;
+  top: 0;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 50% 100%, 0 60%);
+  cursor: grab;
+  pointer-events: auto;
+}
+
+.tl-playhead__flag:active {
+  cursor: grabbing;
+}
+
+.tl-playhead__line {
+  position: absolute;
+  top: 14px;
+  left: -1px;
+  width: 2px;
+  height: calc(100% - 14px);
+  background: var(--accent);
 }

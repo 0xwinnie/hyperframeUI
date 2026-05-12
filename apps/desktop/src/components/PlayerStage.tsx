@@ -1,14 +1,14 @@
 import '@hyperframes/player';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus } from '../icons';
+import { usePlaybackStore } from '../store/playback';
 import { useProjectStore } from '../store/project';
 import { TransportBar } from './TransportBar';
 
-// Player stage. Embeds @hyperframes/player as a web component (loads the
-// composition HTML in its own sandboxed iframe) and renders our own
-// transport bar on top. The Hyperframes preview server still runs in the
-// background so assets referenced by the composition resolve cleanly over
-// HTTP — we just don't load the Studio UI from it.
+// Player stage. Embeds @hyperframes/player (sandboxed iframe with the
+// composition srcdoc) and registers an imperative controller on the
+// playback store so TransportBar / Timeline / agent tools can drive
+// play/pause/seek through a stable interface.
 
 type PreviewState =
   | { kind: 'idle' }
@@ -32,22 +32,21 @@ interface TimeUpdateEvent extends CustomEvent<{ currentTime: number }> {}
 export function PlayerStage(): JSX.Element {
   const projectStatus = useProjectStore((s) => s.status);
   const pickAndLoad = useProjectStore((s) => s.pickAndLoad);
+  const setReady = usePlaybackStore((s) => s.setReady);
+  const setPaused = usePlaybackStore((s) => s.setPaused);
+  const setCurrentTime = usePlaybackStore((s) => s.setCurrentTime);
+  const setController = usePlaybackStore((s) => s.setController);
+  const resetPlayback = usePlaybackStore((s) => s.reset);
 
   const [preview, setPreview] = useState<PreviewState>({ kind: 'idle' });
-  const [ready, setReady] = useState(false);
-  const [paused, setPaused] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-
   const playerRef = useRef<PlayerElement | null>(null);
 
-  // (Re)spawn the Hyperframes preview server whenever the active project
-  // changes. We do not embed its Studio UI — the player loads index.html
-  // directly through the same server URL.
+  // (Re)start the static project server whenever the active project changes.
   const activePath = projectStatus.kind === 'ready' ? projectStatus.project.root : null;
   useEffect(() => {
     if (!activePath) {
       setPreview({ kind: 'idle' });
+      resetPlayback();
       return;
     }
     const bridge = window.hs;
@@ -74,27 +73,29 @@ export function PlayerStage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [activePath]);
+  }, [activePath, resetPlayback]);
 
-  // Reset playback state whenever the loaded composition changes.
   const compositionHtml = preview.kind === 'serving' ? preview.compositionHtml : null;
-  useEffect(() => {
-    setReady(false);
-    setPaused(true);
-    setCurrentTime(0);
-    setDuration(0);
-  }, [compositionHtml]);
 
-  // Hook into player events. We treat the element as the source of truth and
-  // mirror only what the UI needs into React state.
+  useEffect(() => {
+    resetPlayback();
+  }, [compositionHtml, resetPlayback]);
+
+  // Register the imperative controller on the playback store + wire the
+  // player's events into store mutations.
   useEffect(() => {
     const el = playerRef.current;
     if (!el || !compositionHtml) return;
 
+    setController({
+      play: () => el.play(),
+      pause: () => el.pause(),
+      seek: (s) => el.seek(s),
+    });
+
     const onReady = (event: Event): void => {
       const detail = (event as ReadyEvent).detail;
-      setReady(true);
-      setDuration(detail.duration ?? 0);
+      setReady(true, detail.duration ?? 0);
     };
     const onPlay = (): void => setPaused(false);
     const onPause = (): void => setPaused(true);
@@ -123,33 +124,9 @@ export function PlayerStage(): JSX.Element {
       el.removeEventListener('timeupdate', onTimeUpdate);
       el.removeEventListener('ended', onEnded);
       el.removeEventListener('error', onError);
+      setController(null);
     };
-  }, [compositionHtml]);
-
-  const onPlayPause = useCallback(() => {
-    const el = playerRef.current;
-    if (!el || !ready) return;
-    if (el.paused) el.play();
-    else el.pause();
-  }, [ready]);
-
-  const onSeek = useCallback(
-    (seconds: number): void => {
-      const el = playerRef.current;
-      if (!el || !ready) return;
-      el.seek(Math.max(0, Math.min(seconds, duration)));
-    },
-    [ready, duration],
-  );
-
-  const onStep = useCallback(
-    (delta: number): void => {
-      const el = playerRef.current;
-      if (!el || !ready) return;
-      el.seek(Math.max(0, Math.min(el.currentTime + delta, duration)));
-    },
-    [ready, duration],
-  );
+  }, [compositionHtml, setController, setReady, setPaused, setCurrentTime]);
 
   const compositionDims =
     projectStatus.kind === 'ready'
@@ -157,10 +134,9 @@ export function PlayerStage(): JSX.Element {
       : null;
 
   // React 18 does not auto-mirror `width` / `height` JSX props onto custom
-  // elements as DOM attributes (custom elements aren't recognised the way
-  // <img>/<video> are). The player's observedAttributes path only fires on
-  // attribute mutation, so we set them imperatively whenever the loaded
-  // composition's dimensions change.
+  // elements as DOM attributes. The player's observedAttributes path only
+  // fires on attribute mutation, so we set them imperatively whenever the
+  // loaded composition's dimensions change.
   useEffect(() => {
     const el = playerRef.current;
     if (!el || !compositionDims) return;
@@ -195,17 +171,7 @@ export function PlayerStage(): JSX.Element {
         )}
       </div>
 
-      {compositionHtml && (
-        <TransportBar
-          ready={ready}
-          paused={paused}
-          currentTime={currentTime}
-          duration={duration}
-          onPlayPause={onPlayPause}
-          onSeek={onSeek}
-          onStep={onStep}
-        />
-      )}
+      {compositionHtml && <TransportBar />}
     </main>
   );
 }
@@ -270,7 +236,6 @@ function Placeholder({
     return <div className="player__placeholder mono">Parsing project…</div>;
   }
 
-  // Project is ready but there's no composition yet — the onboarding state.
   if (
     projectStatus.kind === 'ready' &&
     preview.kind === 'serving' &&

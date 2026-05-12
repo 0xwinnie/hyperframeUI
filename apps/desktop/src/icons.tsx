@@ -163,4 +163,32 @@ export const Trash = (p: IconProps): IconReturn => (
   </Icon>
 );
 
+export const Eye = (p: IconProps): IconReturn => (
+  <Icon {...p}>
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </Icon>
+);
+
+export const Lock = (p: IconProps): IconReturn => (
+  <Icon {...p}>
+    <rect x="4" y="11" width="16" height="10" rx="2" />
+    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+  </Icon>
+);
+
+export const ZoomIn = (p: IconProps): IconReturn => (
+  <Icon {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-4.3-4.3M11 8v6M8 11h6" />
+  </Icon>
+);
+
+export const ZoomOut = (p: IconProps): IconReturn => (
+  <Icon {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="M21 21l-4.3-4.3M8 11h6" />
+  </Icon>
+);
+
 type IconReturn = ReturnType<typeof Icon>;
