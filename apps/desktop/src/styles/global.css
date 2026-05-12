@@ -985,6 +985,65 @@ button:focus-visible,
   font-size: 12px;
 }
 
+/* ── Thinking card ───────────────────────────────────────────────────── */
+
+.thinking-card {
+  align-self: stretch;
+  font-size: 11px;
+  color: var(--fg-3);
+}
+
+.thinking-card__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--fg-4);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--r-sm);
+}
+
+.thinking-card__head:hover {
+  background: var(--bg-2);
+}
+
+.thinking-card__label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--fg-4);
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  flex-shrink: 0;
+}
+
+.thinking-card__preview {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--fg-4);
+  font-style: italic;
+}
+
+.thinking-card__body {
+  margin: 4px 0 0 24px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border-left: 2px solid var(--line-2);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--fg-3);
+  white-space: pre-wrap;
+  line-height: 1.55;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
 /* ── Tool call card ──────────────────────────────────────────────────── */
 
 .tool-card {

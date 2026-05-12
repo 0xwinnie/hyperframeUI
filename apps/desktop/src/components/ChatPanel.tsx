@@ -108,7 +108,26 @@ function Item({ item }: { item: ChatItem }): JSX.Element {
       </div>
     );
   }
+  if (item.kind === 'thinking') {
+    return <ThinkingCard item={item} />;
+  }
   return <ToolCard item={item} />;
+}
+
+function ThinkingCard({ item }: { item: Extract<ChatItem, { kind: 'thinking' }> }): JSX.Element {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="thinking-card">
+      <button type="button" className="thinking-card__head" onClick={() => setOpen((v) => !v)}>
+        {open ? <ChevronDown size={11} /> : <ChevronRight size={11} />}
+        <span className="thinking-card__label mono">thinking</span>
+        {!open && (
+          <span className="thinking-card__preview truncate">{item.text.slice(0, 120)}</span>
+        )}
+      </button>
+      {open && <div className="thinking-card__body">{item.text}</div>}
+    </div>
+  );
 }
 
 function ToolCard({

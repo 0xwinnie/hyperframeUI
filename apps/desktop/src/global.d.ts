@@ -44,9 +44,13 @@ declare global {
 
   type AgentChunk =
     | { kind: 'session_init'; sessionId: string }
-    | { kind: 'text'; role: 'assistant' | 'user' | 'system'; text: string }
+    | { kind: 'text_start'; blockId: string }
+    | { kind: 'text_delta'; blockId: string; text: string }
+    | { kind: 'thinking_start'; blockId: string }
+    | { kind: 'thinking_delta'; blockId: string; text: string }
     | { kind: 'tool_use'; toolName: string; input: unknown; toolUseId: string }
     | { kind: 'tool_result'; toolUseId: string; output: string; isError: boolean }
+    | { kind: 'system'; text: string }
     | { kind: 'result'; text?: string; sessionId: string }
     | { kind: 'error'; message: string };
 

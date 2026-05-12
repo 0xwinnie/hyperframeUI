@@ -11,6 +11,16 @@ export type ChatItem =
       kind: 'text';
       role: 'user' | 'assistant' | 'system' | 'error';
       text: string;
+      /** Streaming text bubbles tag themselves with the agent's blockId so
+       *  text_delta chunks can find them. Plain user / system / error
+       *  messages omit this. */
+      blockId?: string;
+    }
+  | {
+      id: string;
+      kind: 'thinking';
+      blockId: string;
+      text: string;
     }
   | {
       id: string;
@@ -109,10 +119,33 @@ function reduceChunk(current: ChatItem[], chunk: AgentChunk): ChatItem[] {
     case 'session_init':
     case 'result':
       return current;
-    case 'text': {
-      const role = chunk.role === 'assistant' ? 'assistant' : 'system';
-      return [...current, { id: newId(), kind: 'text', role, text: chunk.text }];
-    }
+    case 'system':
+      return [
+        ...current,
+        { id: newId(), kind: 'text', role: 'system', text: chunk.text },
+      ];
+    case 'text_start':
+      return [
+        ...current,
+        { id: newId(), kind: 'text', role: 'assistant', text: '', blockId: chunk.blockId },
+      ];
+    case 'text_delta':
+      return current.map((item) =>
+        item.kind === 'text' && item.blockId === chunk.blockId
+          ? { ...item, text: item.text + chunk.text }
+          : item,
+      );
+    case 'thinking_start':
+      return [
+        ...current,
+        { id: newId(), kind: 'thinking', blockId: chunk.blockId, text: '' },
+      ];
+    case 'thinking_delta':
+      return current.map((item) =>
+        item.kind === 'thinking' && item.blockId === chunk.blockId
+          ? { ...item, text: item.text + chunk.text }
+          : item,
+      );
     case 'tool_use':
       return [
         ...current,
