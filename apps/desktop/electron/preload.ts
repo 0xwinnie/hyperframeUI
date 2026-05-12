@@ -15,13 +15,16 @@ export type PreviewStartResult =
 
 export type AgentRole = 'user' | 'assistant' | 'system' | 'tool';
 
-export interface AgentChunk {
-  role: AgentRole;
-  text: string;
-}
+export type AgentChunk =
+  | { kind: 'session_init'; sessionId: string }
+  | { kind: 'text'; role: 'assistant' | 'user' | 'system'; text: string }
+  | { kind: 'tool_use'; toolName: string; input: unknown; toolUseId: string }
+  | { kind: 'tool_result'; toolUseId: string; output: string; isError: boolean }
+  | { kind: 'result'; text?: string; sessionId: string }
+  | { kind: 'error'; message: string };
 
 export type AgentSendResult =
-  | { ok: true; messageCount: number }
+  | { ok: true; chunkCount: number }
   | { ok: false; error: string };
 
 export type ProjectLoadResult =
@@ -92,13 +95,20 @@ const bridge = {
     },
   },
   agent: {
-    send: (prompt: string, onChunk: (chunk: AgentChunk) => void): Promise<AgentSendResult> => {
+    send: (
+      prompt: string,
+      projectRoot: string | null,
+      onChunk: (chunk: AgentChunk) => void,
+    ): Promise<AgentSendResult> => {
       const requestId = newRequestId();
       chunkListeners.set(requestId, onChunk);
-      return ipcRenderer.invoke('hfui:agent:send', prompt, requestId).finally(() => {
-        chunkListeners.delete(requestId);
-      });
+      return ipcRenderer
+        .invoke('hfui:agent:send', prompt, requestId, projectRoot)
+        .finally(() => {
+          chunkListeners.delete(requestId);
+        });
     },
+    reset: (): Promise<{ ok: true }> => ipcRenderer.invoke('hfui:agent:reset'),
   },
 } as const;
 

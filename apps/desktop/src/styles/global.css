@@ -985,6 +985,98 @@ button:focus-visible,
   font-size: 12px;
 }
 
+/* ── Tool call card ──────────────────────────────────────────────────── */
+
+.tool-card {
+  align-self: stretch;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--fg-2);
+}
+
+.tool-card--error {
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.tool-card__head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.tool-card__head:hover {
+  background: var(--bg-3);
+}
+
+.tool-card__name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-2);
+  flex-shrink: 0;
+}
+
+.tool-card__summary {
+  flex: 1;
+  min-width: 0;
+  font-size: 10px;
+  color: var(--fg-3);
+}
+
+.tool-card__pending {
+  font-size: 10px;
+  color: var(--amber);
+  flex-shrink: 0;
+}
+
+.tool-card__status {
+  font-size: 10px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.tool-card__status.is-error {
+  color: #f6a4a4;
+}
+
+.tool-card__body {
+  padding: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-card__pre {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+  font-size: 10px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.tool-card__pre.is-error {
+  color: #f6a4a4;
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.30);
+}
+
 .chat__typing {
   display: flex;
   gap: 4px;

@@ -42,13 +42,16 @@ declare global {
 
   type AgentRole = 'user' | 'assistant' | 'system' | 'tool';
 
-  interface AgentChunk {
-    role: AgentRole;
-    text: string;
-  }
+  type AgentChunk =
+    | { kind: 'session_init'; sessionId: string }
+    | { kind: 'text'; role: 'assistant' | 'user' | 'system'; text: string }
+    | { kind: 'tool_use'; toolName: string; input: unknown; toolUseId: string }
+    | { kind: 'tool_result'; toolUseId: string; output: string; isError: boolean }
+    | { kind: 'result'; text?: string; sessionId: string }
+    | { kind: 'error'; message: string };
 
   type AgentSendResult =
-    | { ok: true; messageCount: number }
+    | { ok: true; chunkCount: number }
     | { ok: false; error: string };
 
   type ProjectLoadResult =
@@ -111,7 +114,12 @@ declare global {
       onChanged(listener: (payload: { files: MediaFile[] }) => void): () => void;
     };
     readonly agent: {
-      send(prompt: string, onChunk: (chunk: AgentChunk) => void): Promise<AgentSendResult>;
+      send(
+        prompt: string,
+        projectRoot: string | null,
+        onChunk: (chunk: AgentChunk) => void,
+      ): Promise<AgentSendResult>;
+      reset(): Promise<{ ok: true }>;
     };
   }
 

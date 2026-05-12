@@ -1,6 +1,16 @@
 import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { query } from '@anthropic-ai/claude-agent-sdk';
+import { query, type Options, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+
+// Public chunk types — keep stable; the renderer and IPC contract depend on
+// these shape names.
+export type AgentChunk =
+  | { kind: 'session_init'; sessionId: string }
+  | { kind: 'text'; role: 'assistant' | 'user' | 'system'; text: string }
+  | { kind: 'tool_use'; toolName: string; input: unknown; toolUseId: string }
+  | { kind: 'tool_result'; toolUseId: string; output: string; isError: boolean }
+  | { kind: 'result'; text?: string; sessionId: string }
+  | { kind: 'error'; message: string };
 
 export interface AgentMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
@@ -8,71 +18,156 @@ export interface AgentMessage {
 }
 
 export interface AgentSession {
-  send(prompt: string): AsyncIterable<AgentMessage>;
+  /** Send a prompt; yields fine-grained chunks for the chat UI. */
+  send(prompt: string): AsyncIterable<AgentChunk>;
+  /** Drop the resume sessionId so the next send starts fresh. */
+  reset(): void;
 }
 
-/**
- * Boot a Claude Agent SDK session. Phase 0: no custom tools — we only want to
- * confirm the SDK can authenticate via the user's local Claude Code install.
- *
- * Binary resolution:
- *   1. If the SDK's bundled platform binary is present, use that.
- *   2. Otherwise fall back to the user's installed `claude` CLI (which they
- *      already have for daily use) via `pathToClaudeCodeExecutable`.
- *   3. If neither is available, throw a clear error.
- *
- * Auth, in turn, is handled by whichever Claude Code binary we end up using:
- *   - `ANTHROPIC_API_KEY` environment variable, or
- *   - `~/.claude/auth.json` from a prior `claude login`.
- *
- * See /docs/spec.md §6 for the policy: HyperframeUI never asks the user to
- * "log in to claude.ai" — they bring their own Claude Code session.
- */
-export function startAgentSession(): AgentSession {
+export interface StartAgentSessionOptions {
+  /** Absolute path to the active project. Sets the agent's cwd so it sees
+   *  the project's CLAUDE.md, skills, and runs Bash inside the project. */
+  projectRoot: string | null;
+}
+
+const ALLOWED_TOOLS = [
+  'Read',
+  'Write',
+  'Edit',
+  'Bash',
+  'Glob',
+  'Grep',
+  'AskUserQuestion',
+];
+
+const HFUI_SYSTEM_PROMPT = `\
+You are running inside HyperframeUI, a desktop workbench for Hyperframes video projects. The user is editing this project in a graphical UI alongside you — they can see a player, a timeline of clips, and the media library while you work.
+
+- Always work inside the current project directory (your cwd). Read the project's CLAUDE.md first if you have not already; it documents the Hyperframes conventions for this project.
+- For composing or modifying video: prefer the Hyperframes CLI via Bash ('npx hyperframes <command>' — init, transcribe, lint, validate, render, etc.) over hand-rolling scripts.
+- For timeline edits to an existing composition: use the Edit tool on the relevant HTML file (index.html or compositions/*.html). Each clip's timing is encoded in data-start / data-duration / data-track-index attributes. Captions also carry their visible text as innerHTML.
+- The UI re-parses changed files automatically. After a successful edit, simply mention what you changed — the user will see the player + timeline update.
+- Keep responses concise. The user is watching the chat panel; they don't need a long preamble before each tool call.`;
+
+export function startAgentSession(opts: StartAgentSessionOptions = { projectRoot: null }): AgentSession {
   const claudeBinary = resolveLocalClaudeBinary();
+  let resumeSessionId: string | null = null;
+
   return {
     async *send(prompt: string) {
-      const options = claudeBinary ? { pathToClaudeCodeExecutable: claudeBinary } : undefined;
-      for await (const message of query({ prompt, ...(options ? { options } : {}) })) {
-        const text = extractText(message);
-        if (!text) continue;
-        yield { role: roleOf(message), text };
+      const options: Options = {
+        allowedTools: ALLOWED_TOOLS,
+        permissionMode: 'acceptEdits',
+        systemPrompt: { type: 'preset', preset: 'claude_code', append: HFUI_SYSTEM_PROMPT },
+      };
+      if (claudeBinary) options.pathToClaudeCodeExecutable = claudeBinary;
+      if (opts.projectRoot) options.cwd = opts.projectRoot;
+      if (resumeSessionId) options.resume = resumeSessionId;
+
+      try {
+        for await (const message of query({ prompt, options })) {
+          for (const chunk of translateMessage(message)) {
+            if (chunk.kind === 'session_init') resumeSessionId = chunk.sessionId;
+            if (chunk.kind === 'result') resumeSessionId = chunk.sessionId;
+            yield chunk;
+          }
+        }
+      } catch (err) {
+        yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
       }
+    },
+    reset() {
+      resumeSessionId = null;
     },
   };
 }
 
+/**
+ * Translate a single SDK message into zero or more renderer-facing chunks.
+ * We unfold the inner `content` array of assistant + user messages so each
+ * text / tool_use / tool_result block becomes its own chunk for streaming
+ * display.
+ */
+function translateMessage(message: SDKMessage): AgentChunk[] {
+  if (message.type === 'system' && message.subtype === 'init') {
+    return [{ kind: 'session_init', sessionId: message.session_id }];
+  }
+
+  if (message.type === 'assistant') {
+    const out: AgentChunk[] = [];
+    const content = (message.message as { content?: unknown }).content;
+    if (Array.isArray(content)) {
+      for (const block of content) {
+        const b = block as { type?: string; text?: string; id?: string; name?: string; input?: unknown };
+        if (b.type === 'text' && typeof b.text === 'string') {
+          out.push({ kind: 'text', role: 'assistant', text: b.text });
+        } else if (b.type === 'tool_use' && typeof b.id === 'string' && typeof b.name === 'string') {
+          out.push({ kind: 'tool_use', toolUseId: b.id, toolName: b.name, input: b.input ?? {} });
+        }
+      }
+    }
+    if (message.error) {
+      out.push({ kind: 'error', message: `Agent error: ${message.error}` });
+    }
+    return out;
+  }
+
+  if (message.type === 'user') {
+    const out: AgentChunk[] = [];
+    const content = (message.message as { content?: unknown }).content;
+    if (Array.isArray(content)) {
+      for (const block of content) {
+        const b = block as { type?: string; tool_use_id?: string; content?: unknown; is_error?: boolean };
+        if (b.type === 'tool_result' && typeof b.tool_use_id === 'string') {
+          out.push({
+            kind: 'tool_result',
+            toolUseId: b.tool_use_id,
+            output: stringifyToolOutput(b.content),
+            isError: Boolean(b.is_error),
+          });
+        }
+      }
+    }
+    return out;
+  }
+
+  if (message.type === 'result') {
+    const m = message as { result?: string; session_id: string; is_error?: boolean; subtype?: string };
+    if (m.is_error || m.subtype === 'error_max_turns' || m.subtype === 'error_during_execution') {
+      return [{
+        kind: 'error',
+        message: m.result ?? `Agent run ended with error (${m.subtype ?? 'unknown'})`,
+      }];
+    }
+    return [{ kind: 'result', sessionId: m.session_id, text: m.result }];
+  }
+
+  return [];
+}
+
+function stringifyToolOutput(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        const p = part as { type?: string; text?: string };
+        if (p.type === 'text' && typeof p.text === 'string') return p.text;
+        return JSON.stringify(part);
+      })
+      .join('\n');
+  }
+  if (content == null) return '';
+  return JSON.stringify(content);
+}
+
 function resolveLocalClaudeBinary(): string | undefined {
-  // `which claude` is the most reliable way to find a user-installed CLI on
-  // macOS/Linux. We only use this when the SDK's own platform binary did not
-  // ship (e.g. pnpm skipped the optional dependency).
   try {
-    const found = execSync('command -v claude', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-      .trim();
+    const found = execSync('command -v claude', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
     return found && existsSync(found) ? found : undefined;
   } catch {
     return undefined;
   }
-}
-
-function roleOf(message: unknown): AgentMessage['role'] {
-  if (typeof message === 'object' && message !== null && 'type' in message) {
-    const t = (message as { type: string }).type;
-    if (t === 'user') return 'user';
-    if (t === 'assistant') return 'assistant';
-    if (t === 'system') return 'system';
-    if (t === 'result') return 'assistant';
-  }
-  return 'assistant';
-}
-
-function extractText(message: unknown): string | null {
-  if (typeof message !== 'object' || message === null) return null;
-  if ('result' in message && typeof (message as { result: unknown }).result === 'string') {
-    return (message as { result: string }).result;
-  }
-  if ('text' in message && typeof (message as { text: unknown }).text === 'string') {
-    return (message as { text: string }).text;
-  }
-  return null;
 }
