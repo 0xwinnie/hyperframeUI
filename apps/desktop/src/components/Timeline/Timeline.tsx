@@ -1,11 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Track } from '@hyperframeui/core';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
+import type { Clip, Track, TrackKind } from '@hyperframeui/core';
 import { Eye, Lock, ZoomIn, ZoomOut } from '../../icons';
 import { usePlaybackStore } from '../../store/playback';
 import { useProjectStore } from '../../store/project';
 import { useTimelineStore } from '../../store/timeline';
 import { TimelineRuler } from './Ruler';
 import { TimelineClip } from './Clip';
+import { CaptionEditDialog, ClipContextMenu } from './ContextMenu';
 
 const TRACK_ROW_HEIGHT = 56;
 const TIMELINE_PADDING_END = 320; // px of empty space past the last clip
@@ -20,6 +27,10 @@ export function Timeline(): JSX.Element {
   const setPxPerSecond = useTimelineStore((s) => s.setPxPerSecond);
 
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const [contextMenu, setContextMenu] = useState<
+    { clip: Clip; trackKind: TrackKind; x: number; y: number } | null
+  >(null);
+  const [captionEdit, setCaptionEdit] = useState<Clip | null>(null);
 
   if (!project) {
     return <TimelineEmpty />;
@@ -29,6 +40,10 @@ export function Timeline(): JSX.Element {
     return <TimelineEmptyProject />;
   }
 
+  const openContextMenu = (event: ReactMouseEvent<HTMLElement>, clip: Clip, trackKind: TrackKind): void => {
+    setContextMenu({ clip, trackKind, x: event.clientX, y: event.clientY });
+  };
+
   return (
     <section className="timeline">
       <TimelineToolbar pxPerSecond={pxPerSecond} onZoomChange={setPxPerSecond} />
@@ -37,7 +52,23 @@ export function Timeline(): JSX.Element {
         tracks={tracks}
         duration={duration}
         pxPerSecond={pxPerSecond}
+        onClipContextMenu={openContextMenu}
       />
+      {contextMenu && (
+        <ClipContextMenu
+          clip={contextMenu.clip}
+          trackKind={contextMenu.trackKind}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          onEditCaption={(clip) => {
+            setCaptionEdit(clip);
+          }}
+        />
+      )}
+      {captionEdit && (
+        <CaptionEditDialog clip={captionEdit} onClose={() => setCaptionEdit(null)} />
+      )}
     </section>
   );
 }
@@ -46,6 +77,7 @@ interface TimelineScrollerProps {
   tracks: Track[];
   duration: number;
   pxPerSecond: number;
+  onClipContextMenu: (event: ReactMouseEvent<HTMLElement>, clip: Clip, trackKind: TrackKind) => void;
 }
 
 const TimelineScroller = ({
@@ -53,6 +85,7 @@ const TimelineScroller = ({
   tracks,
   duration,
   pxPerSecond,
+  onClipContextMenu,
 }: TimelineScrollerProps & { ref: React.Ref<HTMLDivElement> }): JSX.Element => {
   // Memoised dims drive the ruler + the playhead's left offset.
   const widthPx = useMemo(
@@ -66,7 +99,12 @@ const TimelineScroller = ({
         <TimelineRuler durationSeconds={duration} pxPerSecond={pxPerSecond} />
         <div className="timeline__tracks">
           {tracks.map((track) => (
-            <TimelineTrack key={track.index} track={track} pxPerSecond={pxPerSecond} />
+            <TimelineTrack
+              key={track.index}
+              track={track}
+              pxPerSecond={pxPerSecond}
+              onClipContextMenu={onClipContextMenu}
+            />
           ))}
         </div>
         <TimelinePlayhead pxPerSecond={pxPerSecond} totalHeight={tracks.length * TRACK_ROW_HEIGHT} />
@@ -75,7 +113,15 @@ const TimelineScroller = ({
   );
 };
 
-function TimelineTrack({ track, pxPerSecond }: { track: Track; pxPerSecond: number }): JSX.Element {
+function TimelineTrack({
+  track,
+  pxPerSecond,
+  onClipContextMenu,
+}: {
+  track: Track;
+  pxPerSecond: number;
+  onClipContextMenu: (event: ReactMouseEvent<HTMLElement>, clip: Clip, trackKind: TrackKind) => void;
+}): JSX.Element {
   return (
     <div className="tl-track">
       <div className={`tl-track__header tl-track__header--${track.color}`}>
@@ -96,9 +142,11 @@ function TimelineTrack({ track, pxPerSecond }: { track: Track; pxPerSecond: numb
           <TimelineClip
             key={clip.id}
             clip={clip}
+            trackIndex={track.index}
             trackColor={track.color}
             trackKind={track.kind}
             pxPerSecond={pxPerSecond}
+            onContextMenu={onClipContextMenu}
           />
         ))}
       </div>

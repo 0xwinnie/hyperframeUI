@@ -1853,6 +1853,77 @@ button:focus-visible,
   z-index: 1;
 }
 
+.tl-clip.is-dragging {
+  cursor: grabbing;
+  opacity: 0.92;
+  z-index: 2;
+  box-shadow: 0 0 0 1.5px var(--accent), 0 8px 22px rgba(0, 0, 0, 0.5);
+}
+
+.tl-clip:not(.is-dragging) {
+  cursor: grab;
+}
+
+/* ── Timeline context menu ───────────────────────────────────────────── */
+
+.tl-context {
+  position: fixed;
+  z-index: 200;
+  min-width: 160px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-3);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-3);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tl-context__item {
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 0;
+  color: var(--fg-1);
+  cursor: pointer;
+}
+
+.tl-context__item:hover {
+  background: var(--bg-3);
+}
+
+.tl-context__item--danger {
+  color: #f6a4a4;
+}
+
+.tl-context__item--danger:hover {
+  background: rgba(220, 38, 38, 0.16);
+}
+
+/* Caption-edit dialog textarea — reuses the .dialog tokens defined above. */
+
+.dialog__textarea {
+  resize: vertical;
+  width: 100%;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  color: var(--fg-1);
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 12px;
+  line-height: 1.45;
+}
+
+.dialog__textarea:focus {
+  outline: none;
+  border-color: var(--accent-line);
+}
+
 /* Track-kind / color variants */
 
 .tl-clip--a-roll,
