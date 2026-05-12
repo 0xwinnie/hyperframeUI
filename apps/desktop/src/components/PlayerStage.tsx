@@ -90,21 +90,13 @@ export function PlayerStage(): JSX.Element {
     const el = playerRef.current;
     if (!el || !compositionHtml) return;
 
-    console.log('[player] attaching listeners to', el, 'srcdoc bytes=', compositionHtml.length);
     const onReady = (event: Event): void => {
       const detail = (event as ReadyEvent).detail;
-      console.log('[player] ready', detail);
       setReady(true);
       setDuration(detail.duration ?? 0);
     };
-    const onPlay = (): void => {
-      console.log('[player] play');
-      setPaused(false);
-    };
-    const onPause = (): void => {
-      console.log('[player] pause');
-      setPaused(true);
-    };
+    const onPlay = (): void => setPaused(false);
+    const onPause = (): void => setPaused(true);
     const onTimeUpdate = (event: Event): void => {
       const detail = (event as TimeUpdateEvent).detail;
       setCurrentTime(detail.currentTime ?? 0);
@@ -158,6 +150,23 @@ export function PlayerStage(): JSX.Element {
     [ready, duration],
   );
 
+  const compositionDims =
+    projectStatus.kind === 'ready'
+      ? { width: projectStatus.project.composition.width, height: projectStatus.project.composition.height }
+      : null;
+
+  // React 18 does not auto-mirror `width` / `height` JSX props onto custom
+  // elements as DOM attributes (custom elements aren't recognised the way
+  // <img>/<video> are). The player's observedAttributes path only fires on
+  // attribute mutation, so we set them imperatively whenever the loaded
+  // composition's dimensions change.
+  useEffect(() => {
+    const el = playerRef.current;
+    if (!el || !compositionDims) return;
+    el.setAttribute('width', String(compositionDims.width));
+    el.setAttribute('height', String(compositionDims.height));
+  }, [compositionDims?.width, compositionDims?.height, compositionHtml]);
+
   return (
     <main className="player">
       <header className="player__header">
@@ -166,11 +175,14 @@ export function PlayerStage(): JSX.Element {
       </header>
 
       <div className="player__stage">
-        {compositionHtml ? (
+        {compositionHtml && compositionDims ? (
           <hyperframes-player
             ref={playerRef as unknown as React.RefObject<HTMLElement>}
             srcdoc={compositionHtml}
             className="player__component"
+            style={{
+              aspectRatio: `${compositionDims.width} / ${compositionDims.height}`,
+            }}
           />
         ) : (
           <Placeholder
