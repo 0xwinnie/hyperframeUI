@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { promises as fs } from 'node:fs';
 import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { loadProject } from '@hyperframeui/core';
 import type { ProjectState } from '@hyperframeui/core';
@@ -31,18 +33,33 @@ export function registerProjectIpc(): void {
 
   ipcMain.handle('hfui:project:pick', async (event): Promise<string | null> => {
     const owner = BrowserWindow.fromWebContents(event.sender);
+    // Accept either the project folder OR its index.html. macOS supports
+    // mixing openFile + openDirectory in one dialog; on other platforms
+    // Electron picks whichever the user can usefully target.
+    const options: Electron.OpenDialogOptions = {
+      title: 'Open a Hyperframes project',
+      properties: ['openFile', 'openDirectory', 'createDirectory'],
+      filters: [{ name: 'Hyperframes project', extensions: ['html'] }],
+      buttonLabel: 'Open project',
+    };
     const result = await (owner
-      ? dialog.showOpenDialog(owner, {
-          title: 'Open a Hyperframes project',
-          properties: ['openDirectory', 'createDirectory'],
-          buttonLabel: 'Open project',
-        })
-      : dialog.showOpenDialog({
-          title: 'Open a Hyperframes project',
-          properties: ['openDirectory', 'createDirectory'],
-          buttonLabel: 'Open project',
-        }));
+      ? dialog.showOpenDialog(owner, options)
+      : dialog.showOpenDialog(options));
     if (result.canceled) return null;
-    return result.filePaths[0] ?? null;
+    const picked = result.filePaths[0];
+    if (!picked) return null;
+    return await resolveProjectRoot(picked);
   });
+}
+
+// Allow the user to point at either a project root (a directory) or the
+// `index.html` inside one — both should land us on the project root.
+async function resolveProjectRoot(picked: string): Promise<string> {
+  try {
+    const stat = await fs.stat(picked);
+    if (stat.isFile()) return path.dirname(picked);
+  } catch {
+    // Fall through — loadProject will surface a clearer error.
+  }
+  return picked;
 }
