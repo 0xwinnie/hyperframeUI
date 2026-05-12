@@ -1,0 +1,38 @@
+{
+  "name": "@hyperframeui/desktop",
+  "version": "0.0.0",
+  "private": true,
+  "description": "HyperframeUI desktop app (Electron + Vite + React 18)",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build && electron-builder",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "echo '(lint not configured yet)'"
+  },
+  "dependencies": {
+    "@hyperframeui/agent": "workspace:*",
+    "@hyperframeui/core": "workspace:*",
+    "@hyperframeui/hyperframes-client": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.5",
+    "vite-plugin-electron": "^0.29.0",
+    "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node", "vite/client"],
+    "noEmit": true,
+    "allowImportingTsExtensions": false
+  },
+  "include": ["src/**/*", "electron/**/*"],
+  "exclude": ["node_modules", "dist", "dist-electron"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/agent" },
+    { "path": "../../packages/hyperframes-client" }
+  ]
+}

@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Build scripts allowed to execute during install (pnpm 10+).
+# Electron needs this to download its prebuilt binary; esbuild needs it
+# for its native helper.
+onlyBuiltDependencies:
+  - electron
+  - esbuild
