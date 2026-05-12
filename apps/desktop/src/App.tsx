@@ -5,6 +5,7 @@ import { SidePanel } from './components/SidePanel';
 import { Timeline } from './components/Timeline/Timeline';
 import { TopBar } from './components/TopBar';
 import { Welcome } from './components/Welcome';
+import { useChatStore } from './store/chat';
 import { useProjectStore } from './store/project';
 import { applyTheme } from './theme/apply';
 import { DEFAULT_THEME } from './theme/themes';
@@ -18,6 +19,7 @@ export function App(): JSX.Element {
   const [tab, setTab] = useState<RailTab>('chat');
   const status = useProjectStore((s) => s.status);
   const loadProject = useProjectStore((s) => s.load);
+  const noticeProjectChange = useChatStore((s) => s.noticeProjectChange);
 
   useEffect(() => {
     applyTheme(DEFAULT_THEME);
@@ -34,6 +36,13 @@ export function App(): JSX.Element {
       cancelled = true;
     };
   }, [loadProject]);
+
+  // Project-change side effects (reset agent session + add system notice)
+  // live here so they fire even when ChatPanel isn't mounted.
+  const projectRoot = status.kind === 'ready' ? status.project.root : null;
+  useEffect(() => {
+    void noticeProjectChange(projectRoot);
+  }, [projectRoot, noticeProjectChange]);
 
   if (status.kind === 'idle') {
     return <Welcome />;
