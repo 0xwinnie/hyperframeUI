@@ -86,6 +86,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-app.on('before-quit', () => {
-  stopActivePreview();
+app.on('before-quit', async (event) => {
+  event.preventDefault();
+  await stopActivePreview();
+  app.exit(0);
 });

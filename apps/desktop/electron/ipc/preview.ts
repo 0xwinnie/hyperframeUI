@@ -1,58 +1,52 @@
 import { ipcMain } from 'electron';
-import {
-  startPreview,
-  type PreviewHandle,
-} from '@hyperframeui/hyperframes-client';
+import { startProjectServer, stopActive, type ProjectServer } from '../project-server';
 
-// Per-window preview handle. We only support one preview server per app
-// session in Phase 0; multi-project tabs land in Phase 3.
-let active: PreviewHandle | null = null;
+let active: ProjectServer | null = null;
 
 export type PreviewStartPayload = {
   projectPath: string;
-  forceNew?: boolean;
 };
 
 export type PreviewStartResult =
   | { ok: true; url: string; projectPath: string }
   | { ok: false; error: string };
 
+// IPC: hfui:preview:start
+//   Spawns a per-project static file server scoped to the project root and
+//   returns its base URL. @hyperframes/player loads `${url}/index.html` from
+//   inside its shadow-DOM iframe, with assets resolving via relative paths
+//   against the same origin.
 export function registerPreviewIpc(): void {
   ipcMain.handle(
     'hfui:preview:start',
     async (_event, payload: PreviewStartPayload): Promise<PreviewStartResult> => {
-      console.log('[hfui] preview:start invoked', payload);
-      if (active) {
-        return { ok: true, url: active.url, projectPath: active.projectPath };
-      }
+      console.log('[hfui] preview:start', payload);
       try {
-        active = await startPreview({
-          projectPath: payload.projectPath,
-          forceNew: payload.forceNew ?? false,
-          onLog: (line) => {
-            // Mirror the CLI output to our own stdout for debugging; in P1
-            // we'll surface this through the chat panel as a system message.
-            process.stdout.write(`[hyperframes] ${line}`);
-          },
-        });
-        console.log('[hfui] preview started at', active.url);
-        return { ok: true, url: active.url, projectPath: active.projectPath };
+        // If the user opened a different project, replace the running server.
+        if (active && active.root !== payload.projectPath) {
+          await active.close();
+          active = null;
+        }
+        if (!active) {
+          active = await startProjectServer(payload.projectPath);
+        }
+        return { ok: true, url: active.url, projectPath: active.root };
       } catch (err) {
-        active = null;
-        console.error('[hfui] preview:start failed:', (err as Error).message);
-        return { ok: false, error: (err as Error).message };
+        const message = err instanceof Error ? err.message : String(err);
+        console.error('[hfui] preview:start failed:', message);
+        return { ok: false, error: message };
       }
     },
   );
 
-  ipcMain.handle('hfui:preview:stop', () => {
-    active?.kill();
+  ipcMain.handle('hfui:preview:stop', async () => {
+    await stopActive();
     active = null;
     return { ok: true };
   });
 }
 
-export function stopActivePreview(): void {
-  active?.kill();
+export async function stopActivePreview(): Promise<void> {
+  await stopActive();
   active = null;
 }

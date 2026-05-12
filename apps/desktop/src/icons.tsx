@@ -95,3 +95,52 @@ export const ArrowUpRight = (p: IconProps): JSX.Element => (
     <path d="M7 17L17 7M8 7h9v9" />
   </Icon>
 );
+
+export const Play = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M6 4l14 8-14 8z" fill="currentColor" />
+  </Icon>
+);
+
+export const Pause = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <rect x="6" y="4" width="4" height="16" fill="currentColor" />
+    <rect x="14" y="4" width="4" height="16" fill="currentColor" />
+  </Icon>
+);
+
+export const SkipBack = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M19 4L9 12l10 8zM5 4v16" fill="currentColor" />
+  </Icon>
+);
+
+export const SkipFwd = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M5 4l10 8-10 8zM19 4v16" fill="currentColor" />
+  </Icon>
+);
+
+export const StepBack = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M16 6l-6 6 6 6" />
+  </Icon>
+);
+
+export const StepFwd = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M8 6l6 6-6 6" />
+  </Icon>
+);
+
+export const Volume = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M11 5L6 9H3v6h3l5 4zM15.5 8.5a5 5 0 0 1 0 7" />
+  </Icon>
+);
+
+export const Maximize = (p: IconProps): JSX.Element => (
+  <Icon {...p}>
+    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+  </Icon>
+);

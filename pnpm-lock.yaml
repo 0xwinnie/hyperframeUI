@@ -17,6 +17,9 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@hyperframes/player':
+        specifier: ^0.5.7
+        version: 0.5.7
       '@hyperframeui/agent':
         specifier: workspace:*
         version: link:../../packages/agent
@@ -601,6 +604,9 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4
+
+  '@hyperframes/player@0.5.7':
+    resolution: {integrity: sha512-2lMHT/cetf9kV19lsNwGlvD9Ra5VBQSUU/WR7aL/30WxwztXcQQF/06d6fTsr1WXgadNh2+6ubtuXY6Vdt4NaQ==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -3137,6 +3143,8 @@ snapshots:
   '@hono/node-server@1.19.14(hono@4.12.18)':
     dependencies:
       hono: 4.12.18
+
+  '@hyperframes/player@0.5.7': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:

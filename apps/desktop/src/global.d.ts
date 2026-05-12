@@ -8,6 +8,28 @@
 import type { ProjectState } from '@hyperframeui/core';
 
 declare global {
+  // Custom element types for `<hyperframes-player>` so JSX accepts the tag.
+  // The web component is imported for side effects in PlayerStage; the import
+  // also registers HyperframesPlayer on customElements.
+  namespace JSX {
+    interface IntrinsicElements {
+      'hyperframes-player': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & {
+          src?: string;
+          controls?: boolean | '';
+          autoplay?: boolean | '';
+          muted?: boolean | '';
+          loop?: boolean | '';
+          width?: number | string;
+          height?: number | string;
+          poster?: string;
+          'playback-rate'?: number | string;
+        },
+        HTMLElement
+      >;
+    }
+  }
+
   interface PreviewStartPayload {
     projectPath: string;
     forceNew?: boolean;
