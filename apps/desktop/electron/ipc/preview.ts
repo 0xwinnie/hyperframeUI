@@ -8,6 +8,12 @@ import {
 
 let active: ProjectServer | null = null;
 
+/** Internal accessor used by other IPC modules (e.g. media) that want to
+ *  produce asset URLs without bouncing through the renderer. */
+export function getActiveServerUrl(): string | null {
+  return active?.url ?? null;
+}
+
 export type PreviewStartPayload = {
   projectPath: string;
 };

@@ -150,3 +150,17 @@ export const Plus = (p: IconProps): JSX.Element => (
     <path d="M12 5v14M5 12h14" />
   </Icon>
 );
+
+export const Upload = (p: IconProps): IconReturn => (
+  <Icon {...p}>
+    <path d="M12 16V4M6 10l6-6 6 6M4 20h16" />
+  </Icon>
+);
+
+export const Trash = (p: IconProps): IconReturn => (
+  <Icon {...p}>
+    <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6" />
+  </Icon>
+);
+
+type IconReturn = ReturnType<typeof Icon>;

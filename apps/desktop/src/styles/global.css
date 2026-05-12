@@ -522,6 +522,356 @@ button:focus-visible,
   overflow-y: auto;
 }
 
+/* ── Library (Media / Audio) ─────────────────────────────────────────── */
+
+.library {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.library__header {
+  flex-shrink: 0;
+  padding: 14px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--line-1);
+}
+
+.library__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.library__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.library__count {
+  font-size: 11px;
+  color: var(--fg-4);
+}
+
+.library__import-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+
+.library__import-btn:hover:not(:disabled) {
+  background: var(--accent-line);
+}
+
+.library__import-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.library__hint {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--fg-4);
+}
+
+.library__hint--error {
+  color: #f6a4a4;
+}
+
+.library__empty {
+  grid-column: 1 / -1;
+  padding: 20px 16px;
+  font-size: 11px;
+  color: var(--fg-4);
+  text-align: center;
+  line-height: 1.55;
+}
+
+.library__grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+.library__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.media-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-radius: var(--r-md);
+  background: var(--bg-2);
+  border: 1px solid var(--line-1);
+  overflow: hidden;
+  transition: border-color var(--t-fast);
+}
+
+.media-card:hover {
+  border-color: var(--line-3);
+}
+
+.media-card__thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--bg-player);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.media-card__thumb img,
+.media-card__thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.media-card__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--fg-1);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.media-card__badge--video {
+  background: rgba(122, 165, 137, 0.30);
+}
+
+.media-card__badge--image {
+  background: rgba(140, 145, 160, 0.32);
+}
+
+.media-card__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--t-fast), background var(--t-fast);
+}
+
+.media-card:hover .media-card__remove {
+  opacity: 1;
+}
+
+.media-card__remove:hover {
+  background: #dc2626;
+}
+
+.media-card__meta {
+  padding: 4px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.media-card__name {
+  font-size: 12px;
+  color: var(--fg-1);
+}
+
+.media-card__sub {
+  font-size: 10px;
+  color: var(--fg-4);
+}
+
+.audio-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-sm);
+  transition: border-color var(--t-fast);
+}
+
+.audio-row:hover {
+  border-color: var(--line-3);
+}
+
+.audio-row__play {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-3);
+  border: 0;
+  color: var(--fg-1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audio-row__play:hover {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.audio-row__meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.audio-row__name {
+  font-size: 12px;
+  color: var(--fg-1);
+}
+
+.audio-row__sub {
+  font-size: 10px;
+  color: var(--fg-4);
+}
+
+.audio-row__remove {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 0;
+  color: var(--fg-4);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--t-fast), color var(--t-fast), background var(--t-fast);
+}
+
+.audio-row:hover .audio-row__remove {
+  opacity: 1;
+}
+
+.audio-row__remove:hover {
+  color: #f6a4a4;
+  background: rgba(220, 38, 38, 0.10);
+}
+
+/* ── Dialog (Remove confirm) ──────────────────────────────────────────── */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.dialog {
+  width: 460px;
+  max-width: calc(100% - 32px);
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-3);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialog__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dialog__code {
+  display: block;
+  font-size: 11px;
+  padding: 8px 10px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+  word-break: break-all;
+}
+
+.dialog__hint {
+  font-size: 12px;
+  color: var(--fg-3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn--danger {
+  padding: 5px 12px;
+  border-radius: var(--r-sm);
+  background: #dc2626;
+  border: 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn--danger:hover {
+  background: #b91c1c;
+}
+
 /* ── Chat ─────────────────────────────────────────────────────────────── */
 
 .chat {

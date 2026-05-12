@@ -42,6 +42,12 @@ ipcRenderer.on('hfui:agent:chunk', (_event, requestId: string, chunk: AgentChunk
   chunkListeners.get(requestId)?.(chunk);
 });
 
+const mediaListeners = new Set<(payload: { files: MediaFile[] }) => void>();
+
+ipcRenderer.on('hfui:media:changed', (_event, payload: { files: MediaFile[] }) => {
+  for (const fn of mediaListeners) fn(payload);
+});
+
 let nextRequestId = 1;
 const newRequestId = (): string => `req-${nextRequestId++}-${Date.now()}`;
 
@@ -67,6 +73,23 @@ const bridge = {
     start: (payload: PreviewStartPayload): Promise<PreviewStartResult> =>
       ipcRenderer.invoke('hfui:preview:start', payload),
     stop: (): Promise<{ ok: true }> => ipcRenderer.invoke('hfui:preview:stop'),
+  },
+  media: {
+    list: (rootPath: string): Promise<MediaListResult> =>
+      ipcRenderer.invoke('hfui:media:list', rootPath),
+    watch: (rootPath: string): Promise<{ ok: true }> =>
+      ipcRenderer.invoke('hfui:media:watch', rootPath),
+    unwatch: (): Promise<{ ok: true }> => ipcRenderer.invoke('hfui:media:unwatch'),
+    import: (rootPath: string): Promise<MediaImportResult> =>
+      ipcRenderer.invoke('hfui:media:import', rootPath),
+    remove: (rootPath: string, relativePath: string): Promise<MediaRemoveResult> =>
+      ipcRenderer.invoke('hfui:media:remove', rootPath, relativePath),
+    onChanged(listener: (payload: { files: MediaFile[] }) => void): () => void {
+      mediaListeners.add(listener);
+      return () => {
+        mediaListeners.delete(listener);
+      };
+    },
   },
   agent: {
     send: (prompt: string, onChunk: (chunk: AgentChunk) => void): Promise<AgentSendResult> => {

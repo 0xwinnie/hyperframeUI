@@ -3,6 +3,7 @@ import { promises as fs, readdirSync } from 'node:fs';
 import { BrowserWindow, app, dialog, ipcMain } from 'electron';
 import { loadProject } from '@hyperframeui/core';
 import type { ProjectState } from '@hyperframeui/core';
+import { startProjectServer } from '../project-server';
 
 export type ProjectLoadResult =
   | { ok: true; project: ProjectState }
@@ -22,6 +23,10 @@ export function registerProjectIpc(): void {
       console.log('[hfui] project:load', rootPath);
       try {
         const project = await loadProject(rootPath);
+        // Start the static project server eagerly so the Media tab + any
+        // other consumer can produce asset URLs without waiting for the
+        // player to mount. Idempotent — preview:start later will reuse it.
+        await startProjectServer(rootPath);
         console.log(
           `[hfui] project loaded: ${project.tracks.length} track(s), ` +
             `${project.tracks.reduce((n, t) => n + t.clips.length, 0)} clip(s), ` +

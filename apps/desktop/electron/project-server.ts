@@ -53,6 +53,15 @@ export interface ProjectServer {
 let active: { server: Server; root: string; url: string; port: number } | null = null;
 
 export async function startProjectServer(projectRoot: string): Promise<ProjectServer> {
+  // Idempotent: re-running for the same root reuses the running server.
+  if (active && active.root === projectRoot) {
+    return {
+      url: active.url,
+      port: active.port,
+      root: active.root,
+      close: stopActive,
+    };
+  }
   if (active) await stopActive();
 
   const server = createServer((req, res) => {

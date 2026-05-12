@@ -60,6 +60,29 @@ declare global {
     | { ok: false; error: string }
     | { ok: false; cancelled: true };
 
+  type MediaKind = 'video' | 'audio' | 'image';
+
+  interface MediaFile {
+    id: string;
+    kind: MediaKind;
+    relativePath: string;
+    name: string;
+    sizeBytes: number;
+    modifiedMs: number;
+  }
+
+  interface MediaListResult {
+    files: MediaFile[];
+    baseUrl: string | null;
+  }
+
+  type MediaImportResult =
+    | { ok: true; imported: string[] }
+    | { ok: false; error: string }
+    | { ok: false; cancelled: true };
+
+  type MediaRemoveResult = { ok: true } | { ok: false; error: string };
+
   interface HsBridge {
     readonly platform: NodeJS.Platform;
     readonly versions: {
@@ -78,6 +101,14 @@ declare global {
     readonly preview: {
       start(payload: PreviewStartPayload): Promise<PreviewStartResult>;
       stop(): Promise<{ ok: true }>;
+    };
+    readonly media: {
+      list(rootPath: string): Promise<MediaListResult>;
+      watch(rootPath: string): Promise<{ ok: true }>;
+      unwatch(): Promise<{ ok: true }>;
+      import(rootPath: string): Promise<MediaImportResult>;
+      remove(rootPath: string, relativePath: string): Promise<MediaRemoveResult>;
+      onChanged(listener: (payload: { files: MediaFile[] }) => void): () => void;
     };
     readonly agent: {
       send(prompt: string, onChunk: (chunk: AgentChunk) => void): Promise<AgentSendResult>;
