@@ -15,6 +15,7 @@ export default defineConfig({
             outDir: 'dist-electron',
             rollupOptions: {
               external: ['electron'],
+              output: { format: 'es', entryFileNames: '[name].js' },
             },
           },
         },
@@ -26,6 +27,11 @@ export default defineConfig({
             outDir: 'dist-electron',
             rollupOptions: {
               external: ['electron'],
+              // Output the preload as plain CJS with a .cjs extension so the
+              // require()-based bundle vite-plugin-electron emits matches the
+              // way Electron loads it (Electron 33 still treats .cjs as CJS,
+              // whereas .mjs forces ESM and breaks the require call).
+              output: { format: 'cjs', entryFileNames: '[name].cjs' },
             },
           },
         },

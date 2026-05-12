@@ -1,6 +1,7 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { registerPreviewIpc, stopActivePreview } from './ipc/preview';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,7 +23,7 @@ function createMainWindow(): void {
     backgroundColor: '#1c1d22',
     show: false,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -37,6 +38,17 @@ function createMainWindow(): void {
     return { action: 'deny' };
   });
 
+  // Forward renderer console output to main stdout for easier debugging
+  // during Phase 0. We can lower the verbosity in P1.
+  mainWindow.webContents.on('console-message', (_event, level, message, line, source) => {
+    const tag = ['log', 'warn', 'error'][level] ?? 'log';
+    console.log(`[renderer:${tag}] ${message} (${source}:${line})`);
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, code, description) => {
+    console.error('[renderer] did-fail-load', code, description);
+  });
+
   if (DEV_SERVER_URL) {
     void mainWindow.loadURL(DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
@@ -45,7 +57,20 @@ function createMainWindow(): void {
   }
 }
 
+function registerEnvIpc(): void {
+  // The renderer process does not reliably inherit our launch env, so we
+  // expose a tiny IPC for it to pull the values it needs from the main
+  // process (which always inherits the launching shell's env).
+  ipcMain.handle('hfui:env:demoProjectPath', () => process.env['HFUI_DEMO_PROJECT'] ?? null);
+}
+
 app.whenReady().then(() => {
+  console.log(
+    '[hfui] main ready. HFUI_DEMO_PROJECT=',
+    process.env['HFUI_DEMO_PROJECT'] ?? '(unset)',
+  );
+  registerEnvIpc();
+  registerPreviewIpc();
   createMainWindow();
 
   app.on('activate', () => {
@@ -55,4 +80,8 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  stopActivePreview();
 });

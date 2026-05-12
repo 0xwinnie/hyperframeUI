@@ -10,10 +10,5 @@
     "allowImportingTsExtensions": false
   },
   "include": ["src/**/*", "electron/**/*"],
-  "exclude": ["node_modules", "dist", "dist-electron"],
-  "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/agent" },
-    { "path": "../../packages/hyperframes-client" }
-  ]
+  "exclude": ["node_modules", "dist", "dist-electron"]
 }
