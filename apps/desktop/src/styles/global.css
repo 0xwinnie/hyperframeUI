@@ -1,0 +1,74 @@
+/*
+ * Phase 0 baseline styles. The full Moss theme + Tailwind setup lands in
+ * P0.4. For now we only need enough CSS to render a centered splash with
+ * the right font stack and the bg-0 backdrop the spec calls for.
+ */
+
+:root {
+  /* Moss surfaces (subset; full token map arrives in P0.4) */
+  --bg-0: #1c1d22;
+  --bg-1: #24262c;
+  --fg-1: #ebecee;
+  --fg-3: #8c919a;
+  --fg-4: #666b75;
+  --accent: #7aa589;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-0);
+  color: var(--fg-1);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-feature-settings: 'tnum' 1;
+}
+
+.boot-splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  user-select: none;
+}
+
+.boot-splash__mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent), #94bba2);
+  box-shadow: 0 6px 18px rgba(122, 165, 137, 0.35);
+}
+
+.boot-splash__title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.boot-splash__subtitle {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+.boot-splash__meta {
+  font-size: 10px;
+  color: var(--fg-4);
+  margin-top: 4px;
+}
