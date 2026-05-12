@@ -44,6 +44,7 @@ declare global {
     };
     readonly project: {
       load(rootPath: string): Promise<ProjectLoadResult>;
+      pick(): Promise<string | null>;
     };
     readonly preview: {
       start(payload: PreviewStartPayload): Promise<PreviewStartResult>;

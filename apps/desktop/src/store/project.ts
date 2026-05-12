@@ -14,10 +14,11 @@ export type ProjectStatus =
 interface ProjectStore {
   status: ProjectStatus;
   load(path: string): Promise<void>;
+  pickAndLoad(): Promise<void>;
   reset(): void;
 }
 
-export const useProjectStore = create<ProjectStore>((set) => ({
+export const useProjectStore = create<ProjectStore>((set, get) => ({
   status: { kind: 'idle' },
   async load(path: string) {
     if (!window.hs?.project) {
@@ -31,6 +32,11 @@ export const useProjectStore = create<ProjectStore>((set) => ({
     } else {
       set({ status: { kind: 'error', path, error: result.error } });
     }
+  },
+  async pickAndLoad() {
+    const picked = await window.hs?.project.pick();
+    if (!picked) return;
+    await get().load(picked);
   },
   reset() {
     set({ status: { kind: 'idle' } });

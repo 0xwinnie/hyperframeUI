@@ -55,6 +55,7 @@ const bridge = {
   project: {
     load: (rootPath: string): Promise<ProjectLoadResult> =>
       ipcRenderer.invoke('hfui:project:load', rootPath),
+    pick: (): Promise<string | null> => ipcRenderer.invoke('hfui:project:pick'),
   },
   preview: {
     start: (payload: PreviewStartPayload): Promise<PreviewStartResult> =>

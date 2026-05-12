@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { BrowserWindow, dialog, ipcMain } from 'electron';
 import { loadProject } from '@hyperframeui/core';
 import type { ProjectState } from '@hyperframeui/core';
 
@@ -6,9 +6,8 @@ export type ProjectLoadResult =
   | { ok: true; project: ProjectState }
   | { ok: false; error: string };
 
-// IPC: hfui:project:load
-//   args:  (rootPath: string)
-//   resolves: ProjectLoadResult — a full ProjectState on success.
+// IPC: hfui:project:load — read + parse a project from disk.
+// IPC: hfui:project:pick — open a native folder picker and return the path.
 export function registerProjectIpc(): void {
   ipcMain.handle(
     'hfui:project:load',
@@ -29,4 +28,21 @@ export function registerProjectIpc(): void {
       }
     },
   );
+
+  ipcMain.handle('hfui:project:pick', async (event): Promise<string | null> => {
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const result = await (owner
+      ? dialog.showOpenDialog(owner, {
+          title: 'Open a Hyperframes project',
+          properties: ['openDirectory', 'createDirectory'],
+          buttonLabel: 'Open project',
+        })
+      : dialog.showOpenDialog({
+          title: 'Open a Hyperframes project',
+          properties: ['openDirectory', 'createDirectory'],
+          buttonLabel: 'Open project',
+        }));
+    if (result.canceled) return null;
+    return result.filePaths[0] ?? null;
+  });
 }

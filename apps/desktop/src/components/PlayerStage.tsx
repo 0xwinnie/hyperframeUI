@@ -1,64 +1,56 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useProjectStore } from '../store/project';
 
-// Player stage. In Phase 0 we just verify we can boot
-// `npx hyperframes preview` and load the resulting URL in an <iframe>.
-// The playback-control bridge (postMessage / webFrameMain.executeJavaScript)
-// arrives with the timeline in P1.
+// Player stage. The Hyperframes preview server is spawned whenever the
+// active project changes — i.e. when the user opens a project via the
+// TopBar or the "Open project" CTA below. The playback-control bridge
+// (postMessage / webFrameMain.executeJavaScript) arrives with the
+// timeline in P1.7.
 
 type Status =
   | { kind: 'idle' }
-  | { kind: 'starting' }
+  | { kind: 'starting'; projectPath: string }
   | { kind: 'ready'; url: string; projectPath: string }
-  | { kind: 'no-project' }
   | { kind: 'error'; message: string };
 
 export function PlayerStage(): JSX.Element {
+  const projectStatus = useProjectStore((s) => s.status);
+  const pickAndLoad = useProjectStore((s) => s.pickAndLoad);
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
-  const startedRef = useRef(false);
 
+  // (Re)start the preview server whenever the active project's path changes.
+  const activePath = projectStatus.kind === 'ready' ? projectStatus.project.root : null;
   useEffect(() => {
-    if (startedRef.current) return;
-    startedRef.current = true;
-
-    console.log('[player] mount effect, bridge present:', !!window.hs);
+    if (!activePath) {
+      setStatus({ kind: 'idle' });
+      return;
+    }
     const bridge = window.hs;
     if (!bridge) {
       setStatus({ kind: 'error', message: 'Preload bridge not available' });
       return;
     }
-
-    setStatus({ kind: 'starting' });
+    let cancelled = false;
+    setStatus({ kind: 'starting', projectPath: activePath });
     void (async () => {
-      try {
-        const projectPath = await bridge.env.getDemoProjectPath();
-        if (!projectPath) {
-          setStatus({ kind: 'no-project' });
-          return;
-        }
-        const result = await bridge.preview.start({ projectPath });
-        if (result.ok) {
-          setStatus({
-            kind: 'ready',
-            url: result.url,
-            projectPath: result.projectPath,
-          });
-        } else {
-          setStatus({ kind: 'error', message: result.error });
-        }
-      } catch (err) {
-        setStatus({
-          kind: 'error',
-          message: err instanceof Error ? err.message : String(err),
-        });
+      const result = await bridge.preview.start({ projectPath: activePath });
+      if (cancelled) return;
+      if (result.ok) {
+        setStatus({ kind: 'ready', url: result.url, projectPath: result.projectPath });
+      } else {
+        setStatus({ kind: 'error', message: result.error });
       }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [activePath]);
 
   return (
     <main className="player">
       <header className="player__header">
         <span className="player__title">Preview</span>
-        <span className="player__caption mono">{captionFor(status)}</span>
+        <span className="player__caption mono">{captionFor(status, projectStatus.kind)}</span>
       </header>
       <div className="player__stage">
         {status.kind === 'ready' && (
@@ -71,14 +63,23 @@ export function PlayerStage(): JSX.Element {
           />
         )}
         {status.kind !== 'ready' && (
-          <div className="player__placeholder mono">{placeholderFor(status)}</div>
+          <Placeholder
+            status={status}
+            projectStatusKind={projectStatus.kind}
+            onPick={() => {
+              void pickAndLoad();
+            }}
+          />
         )}
       </div>
     </main>
   );
 }
 
-function captionFor(s: Status): string {
+function captionFor(s: Status, projectKind: ReturnType<typeof useProjectStore.getState>['status']['kind']): string {
+  if (projectKind === 'idle') return 'no project loaded';
+  if (projectKind === 'loading') return 'loading project…';
+  if (projectKind === 'error') return 'project failed to load';
   switch (s.kind) {
     case 'idle':
       return 'waiting';
@@ -86,23 +87,35 @@ function captionFor(s: Status): string {
       return 'starting hyperframes preview…';
     case 'ready':
       return s.url.replace(/^https?:\/\//, '');
-    case 'no-project':
-      return 'no project loaded';
     case 'error':
       return 'preview error';
   }
 }
 
-function placeholderFor(s: Status): string {
-  switch (s.kind) {
-    case 'idle':
-    case 'starting':
-      return 'Booting Hyperframes preview…';
-    case 'no-project':
-      return 'Set HFUI_DEMO_PROJECT to a Hyperframes project path and relaunch.';
-    case 'error':
-      return s.message;
-    case 'ready':
-      return '';
+function Placeholder({
+  status,
+  projectStatusKind,
+  onPick,
+}: {
+  status: Status;
+  projectStatusKind: ReturnType<typeof useProjectStore.getState>['status']['kind'];
+  onPick: () => void;
+}): JSX.Element {
+  if (projectStatusKind === 'idle') {
+    return (
+      <div className="player__placeholder">
+        <p className="mono">No project open</p>
+        <button type="button" className="btn btn--primary" onClick={onPick}>
+          Open project…
+        </button>
+      </div>
+    );
   }
+  if (projectStatusKind === 'loading') {
+    return <div className="player__placeholder mono">Parsing project…</div>;
+  }
+  if (status.kind === 'error') {
+    return <div className="player__placeholder mono">{status.message}</div>;
+  }
+  return <div className="player__placeholder mono">Booting Hyperframes preview…</div>;
 }

@@ -7,6 +7,7 @@ import { useProjectStore } from '../store/project';
 
 export function TopBar(): JSX.Element {
   const status = useProjectStore((s) => s.status);
+  const pickAndLoad = useProjectStore((s) => s.pickAndLoad);
 
   const name = status.kind === 'ready' ? status.project.meta.name : projectLabel(status);
   const meta =
@@ -25,7 +26,14 @@ export function TopBar(): JSX.Element {
 
       <div className="topbar__divider" aria-hidden />
 
-      <button type="button" className="topbar__project" title="Switch project">
+      <button
+        type="button"
+        className="topbar__project"
+        title="Open project"
+        onClick={() => {
+          void pickAndLoad();
+        }}
+      >
         <Folder size={12} style={{ color: 'var(--fg-3)' }} />
         <span>{name}</span>
         <ChevronDown size={11} style={{ color: 'var(--fg-4)' }} />
