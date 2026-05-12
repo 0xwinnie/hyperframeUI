@@ -15,6 +15,7 @@ interface ProjectStore {
   status: ProjectStatus;
   load(path: string): Promise<void>;
   pickAndLoad(): Promise<void>;
+  createAndLoad(): Promise<void>;
   reset(): void;
 }
 
@@ -37,6 +38,16 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     const picked = await window.hs?.project.pick();
     if (!picked) return;
     await get().load(picked);
+  },
+  async createAndLoad() {
+    const result = await window.hs?.project.create();
+    if (!result || !result.ok) {
+      if (result && !('cancelled' in result) && 'error' in result) {
+        set({ status: { kind: 'error', path: '(new project)', error: result.error } });
+      }
+      return;
+    }
+    await get().load(result.path);
   },
   reset() {
     set({ status: { kind: 'idle' } });

@@ -17,9 +17,13 @@ export class ProjectLoadError extends Error {
 export async function loadProject(root: string): Promise<ProjectState> {
   const absRoot = path.resolve(root);
 
+  // index.html is the canonical composition file but a fresh project — one
+  // the user just created via "New" before any Claude tool has scaffolded
+  // it — won't have one yet. We treat that as a valid empty project and
+  // return a ProjectState with default composition + no tracks.
   const indexPath = path.join(absRoot, 'index.html');
-  const indexHtml = await readFileOrThrow(indexPath, 'index.html');
-  const parsed = parseIndexHtml(indexHtml, 'index.html');
+  const indexHtml = await readFileOrNull(indexPath);
+  const parsed = indexHtml ? parseIndexHtml(indexHtml, 'index.html') : null;
 
   const metaJson = await readFileOrNull(path.join(absRoot, 'meta.json'));
   const meta = parseProjectMeta(metaJson, path.basename(absRoot));
@@ -29,27 +33,23 @@ export async function loadProject(root: string): Promise<ProjectState> {
   );
   const sidecar = parseSidecar(sidecarJson);
 
-  const tracks = groupIntoTracks(parsed.clips, sidecar.trackMap);
+  const tracks = parsed ? groupIntoTracks(parsed.clips, sidecar.trackMap) : [];
 
   return {
     root: absRoot,
     meta,
-    composition: parsed.composition,
+    composition: parsed?.composition ?? {
+      width: 1080,
+      height: 1080,
+      duration: 0,
+      fps: 30,
+    },
     tracks,
     assets: [],
     sidecar,
   };
 }
 
-async function readFileOrThrow(filePath: string, label: string): Promise<string> {
-  try {
-    return await fs.readFile(filePath, 'utf8');
-  } catch (err) {
-    throw new ProjectLoadError(
-      `Failed to read ${label} at ${filePath}: ${(err as Error).message}`,
-    );
-  }
-}
 
 async function readFileOrNull(filePath: string): Promise<string | null> {
   try {

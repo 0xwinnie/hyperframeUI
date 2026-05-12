@@ -55,6 +55,11 @@ declare global {
     | { ok: true; project: ProjectState }
     | { ok: false; error: string };
 
+  type ProjectCreateResult =
+    | { ok: true; path: string }
+    | { ok: false; error: string }
+    | { ok: false; cancelled: true };
+
   interface HsBridge {
     readonly platform: NodeJS.Platform;
     readonly versions: {
@@ -68,6 +73,7 @@ declare global {
     readonly project: {
       load(rootPath: string): Promise<ProjectLoadResult>;
       pick(): Promise<string | null>;
+      create(): Promise<ProjectCreateResult>;
     };
     readonly preview: {
       start(payload: PreviewStartPayload): Promise<PreviewStartResult>;

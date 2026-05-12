@@ -4,15 +4,19 @@ import { PlayerStage } from './components/PlayerStage';
 import { SidePanel } from './components/SidePanel';
 import { TimelinePlaceholder } from './components/TimelinePlaceholder';
 import { TopBar } from './components/TopBar';
+import { Welcome } from './components/Welcome';
 import { useProjectStore } from './store/project';
 import { applyTheme } from './theme/apply';
 import { DEFAULT_THEME } from './theme/themes';
 
-// Phase 0/1 shell. On mount we apply the default theme, then fetch the demo
-// project path from the main process and ask the store to load it.
+// Phase 0/1 shell. Mount applies the Moss theme + auto-loads the demo
+// project when HFUI_DEMO_PROJECT is set. When no project is loaded, the
+// Welcome screen takes over the window; otherwise the standard three-pane
+// workbench renders.
 
 export function App(): JSX.Element {
   const [tab, setTab] = useState<RailTab>('chat');
+  const status = useProjectStore((s) => s.status);
   const loadProject = useProjectStore((s) => s.load);
 
   useEffect(() => {
@@ -30,6 +34,10 @@ export function App(): JSX.Element {
       cancelled = true;
     };
   }, [loadProject]);
+
+  if (status.kind === 'idle') {
+    return <Welcome />;
+  }
 
   return (
     <div className="shell">

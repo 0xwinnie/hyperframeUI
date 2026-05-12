@@ -28,6 +28,11 @@ export type ProjectLoadResult =
   | { ok: true; project: ProjectState }
   | { ok: false; error: string };
 
+export type ProjectCreateResult =
+  | { ok: true; path: string }
+  | { ok: false; error: string }
+  | { ok: false; cancelled: true };
+
 // We route streamed chunks through a per-request callback table inside the
 // preload context so the renderer can subscribe via the contextBridge without
 // having to pass IpcRenderer event handlers across the isolation boundary.
@@ -56,6 +61,7 @@ const bridge = {
     load: (rootPath: string): Promise<ProjectLoadResult> =>
       ipcRenderer.invoke('hfui:project:load', rootPath),
     pick: (): Promise<string | null> => ipcRenderer.invoke('hfui:project:pick'),
+    create: (): Promise<ProjectCreateResult> => ipcRenderer.invoke('hfui:project:create'),
   },
   preview: {
     start: (payload: PreviewStartPayload): Promise<PreviewStartResult> =>

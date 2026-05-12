@@ -108,6 +108,140 @@ button:focus-visible,
   outline-offset: 1px;
 }
 
+/* ── Welcome screen ──────────────────────────────────────────────────── */
+
+.welcome {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px;
+  -webkit-app-region: drag;
+}
+
+.welcome__card {
+  max-width: 520px;
+  width: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.welcome__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.welcome__mark {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 4px 16px var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome__wordmark {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg-1);
+  letter-spacing: -0.1px;
+}
+
+.welcome__title {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--fg-1);
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+
+.welcome__subtitle {
+  font-size: 13px;
+  color: var(--fg-3);
+  line-height: 1.5;
+  margin: 0 0 28px;
+}
+
+.welcome__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome__cta {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  color: var(--fg-2);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: background var(--t-fast), border-color var(--t-fast),
+    transform var(--t-fast);
+}
+
+.welcome__cta:hover {
+  background: var(--bg-3);
+  border-color: var(--line-3);
+  transform: translateY(-1px);
+}
+
+.welcome__cta--primary {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-ink);
+}
+
+.welcome__cta--primary:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.welcome__cta-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.welcome__cta-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.welcome__cta--primary .welcome__cta-title {
+  color: var(--accent-ink);
+}
+
+.welcome__cta-hint {
+  font-size: 11px;
+  color: var(--fg-4);
+}
+
+.welcome__cta code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  background: var(--bg-1);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--fg-2);
+}
+
+.welcome__footnote {
+  margin-top: 24px;
+  font-size: 11px;
+  color: var(--fg-4);
+  text-align: center;
+}
+
 /* ── App shell ───────────────────────────────────────────────────────── */
 
 .shell {
