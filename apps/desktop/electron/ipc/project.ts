@@ -3,6 +3,11 @@ import { promises as fs, readdirSync } from 'node:fs';
 import { BrowserWindow, app, dialog, ipcMain } from 'electron';
 import { loadProject } from '@hyperframeui/core';
 import type { ProjectState } from '@hyperframeui/core';
+import {
+  setCompositionListener,
+  startCompositionWatcher,
+  stopCompositionWatcher,
+} from '../composition-watcher';
 import { startProjectServer } from '../project-server';
 
 export type ProjectLoadResult =
@@ -73,6 +78,18 @@ export function registerProjectIpc(): void {
       };
     }
     return { ok: true, path: target };
+  });
+
+  ipcMain.handle('hfui:project:watch', async (event, rootPath: string) => {
+    setCompositionListener(event.sender);
+    await startCompositionWatcher(rootPath);
+    return { ok: true };
+  });
+
+  ipcMain.handle('hfui:project:unwatch', async () => {
+    await stopCompositionWatcher();
+    setCompositionListener(null);
+    return { ok: true };
   });
 
   ipcMain.handle('hfui:project:pick', async (event): Promise<string | null> => {

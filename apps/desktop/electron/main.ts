@@ -1,8 +1,10 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { stopCompositionWatcher } from './composition-watcher';
 import { registerAgentIpc } from './ipc/agent';
 import { registerMediaIpc, stopMediaWatcher } from './ipc/media';
+import { registerOpsIpc } from './ipc/ops';
 import { getActiveServerUrl, registerPreviewIpc, stopActivePreview } from './ipc/preview';
 import { registerProjectIpc } from './ipc/project';
 
@@ -76,6 +78,7 @@ app.whenReady().then(() => {
   registerProjectIpc();
   registerPreviewIpc();
   registerMediaIpc(getActiveServerUrl);
+  registerOpsIpc();
   registerAgentIpc();
   createMainWindow();
 
@@ -91,6 +94,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async (event) => {
   event.preventDefault();
   await stopMediaWatcher();
+  await stopCompositionWatcher();
   await stopActivePreview();
   app.exit(0);
 });

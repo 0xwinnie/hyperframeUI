@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ProjectState } from '@hyperframeui/core';
+import type { Op, OpResult, ProjectState } from '@hyperframeui/core';
 
 // Phase 0/1: minimal preload. The renderer can't touch Node APIs directly —
 // every privileged action must go through a whitelisted bridge method here.
@@ -55,6 +55,12 @@ ipcRenderer.on('hfui:media:changed', (_event, payload: { files: MediaFile[] }) =
   for (const fn of mediaListeners) fn(payload);
 });
 
+const compositionListeners = new Set<() => void>();
+
+ipcRenderer.on('hfui:project:compositionChanged', () => {
+  for (const fn of compositionListeners) fn();
+});
+
 let nextRequestId = 1;
 const newRequestId = (): string => `req-${nextRequestId++}-${Date.now()}`;
 
@@ -75,6 +81,19 @@ const bridge = {
       ipcRenderer.invoke('hfui:project:load', rootPath),
     pick: (): Promise<string | null> => ipcRenderer.invoke('hfui:project:pick'),
     create: (): Promise<ProjectCreateResult> => ipcRenderer.invoke('hfui:project:create'),
+    watch: (rootPath: string): Promise<{ ok: true }> =>
+      ipcRenderer.invoke('hfui:project:watch', rootPath),
+    unwatch: (): Promise<{ ok: true }> => ipcRenderer.invoke('hfui:project:unwatch'),
+    onCompositionChanged(listener: () => void): () => void {
+      compositionListeners.add(listener);
+      return () => {
+        compositionListeners.delete(listener);
+      };
+    },
+  },
+  ops: {
+    apply: (rootPath: string, op: Op): Promise<OpResult> =>
+      ipcRenderer.invoke('hfui:ops:apply', rootPath, op),
   },
   preview: {
     start: (payload: PreviewStartPayload): Promise<PreviewStartResult> =>

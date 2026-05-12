@@ -41,8 +41,12 @@ export function PlayerStage(): JSX.Element {
   const [preview, setPreview] = useState<PreviewState>({ kind: 'idle' });
   const playerRef = useRef<PlayerElement | null>(null);
 
-  // (Re)start the static project server whenever the active project changes.
+  // (Re)start the static project server whenever the active project — or
+  // its composition revision — changes. The revision bumps every time the
+  // project store reloads from disk (chokidar fired, user op completed),
+  // which is exactly when the player needs to re-read index.html.
   const activePath = projectStatus.kind === 'ready' ? projectStatus.project.root : null;
+  const revision = projectStatus.kind === 'ready' ? projectStatus.revision : 0;
   useEffect(() => {
     if (!activePath) {
       setPreview({ kind: 'idle' });
@@ -73,7 +77,7 @@ export function PlayerStage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [activePath, resetPlayback]);
+  }, [activePath, revision, resetPlayback]);
 
   const compositionHtml = preview.kind === 'serving' ? preview.compositionHtml : null;
 

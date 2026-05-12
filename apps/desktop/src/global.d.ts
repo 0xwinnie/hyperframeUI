@@ -5,7 +5,7 @@
 // `declare global` to stay ambient. Renderer code can use these names without
 // importing them.
 
-import type { ProjectState } from '@hyperframeui/core';
+import type { Op, OpResult, ProjectState } from '@hyperframeui/core';
 
 declare global {
   // Custom element types for `<hyperframes-player>` so JSX accepts the tag.
@@ -104,6 +104,12 @@ declare global {
       load(rootPath: string): Promise<ProjectLoadResult>;
       pick(): Promise<string | null>;
       create(): Promise<ProjectCreateResult>;
+      watch(rootPath: string): Promise<{ ok: true }>;
+      unwatch(): Promise<{ ok: true }>;
+      onCompositionChanged(listener: () => void): () => void;
+    };
+    readonly ops: {
+      apply(rootPath: string, op: Op): Promise<OpResult>;
     };
     readonly preview: {
       start(payload: PreviewStartPayload): Promise<PreviewStartResult>;
