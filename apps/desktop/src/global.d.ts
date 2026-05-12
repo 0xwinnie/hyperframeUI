@@ -10,6 +10,17 @@ type PreviewStartResult =
   | { ok: true; url: string; projectPath: string }
   | { ok: false; error: string };
 
+type AgentRole = 'user' | 'assistant' | 'system' | 'tool';
+
+interface AgentChunk {
+  role: AgentRole;
+  text: string;
+}
+
+type AgentSendResult =
+  | { ok: true; messageCount: number }
+  | { ok: false; error: string };
+
 interface HsBridge {
   readonly platform: NodeJS.Platform;
   readonly versions: {
@@ -23,6 +34,9 @@ interface HsBridge {
   readonly preview: {
     start(payload: PreviewStartPayload): Promise<PreviewStartResult>;
     stop(): Promise<{ ok: true }>;
+  };
+  readonly agent: {
+    send(prompt: string, onChunk: (chunk: AgentChunk) => void): Promise<AgentSendResult>;
   };
 }
 

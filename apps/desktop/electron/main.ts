@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { registerAgentIpc } from './ipc/agent';
 import { registerPreviewIpc, stopActivePreview } from './ipc/preview';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -71,6 +72,7 @@ app.whenReady().then(() => {
   );
   registerEnvIpc();
   registerPreviewIpc();
+  registerAgentIpc();
   createMainWindow();
 
   app.on('activate', () => {
