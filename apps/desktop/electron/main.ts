@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { registerAgentIpc } from './ipc/agent';
 import { registerPreviewIpc, stopActivePreview } from './ipc/preview';
+import { registerProjectIpc } from './ipc/project';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -71,6 +72,7 @@ app.whenReady().then(() => {
     process.env['HFUI_DEMO_PROJECT'] ?? '(unset)',
   );
   registerEnvIpc();
+  registerProjectIpc();
   registerPreviewIpc();
   registerAgentIpc();
   createMainWindow();

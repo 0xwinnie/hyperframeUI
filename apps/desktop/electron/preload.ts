@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { ProjectState } from '@hyperframeui/core';
 
-// Phase 0: minimal preload. The renderer can't touch Node APIs directly —
+// Phase 0/1: minimal preload. The renderer can't touch Node APIs directly —
 // every privileged action must go through a whitelisted bridge method here.
-// As tools land in Phase 1, add them to a typed `hs.*` namespace.
 
 export interface PreviewStartPayload {
   projectPath: string;
@@ -22,6 +22,10 @@ export interface AgentChunk {
 
 export type AgentSendResult =
   | { ok: true; messageCount: number }
+  | { ok: false; error: string };
+
+export type ProjectLoadResult =
+  | { ok: true; project: ProjectState }
   | { ok: false; error: string };
 
 // We route streamed chunks through a per-request callback table inside the
@@ -47,6 +51,10 @@ const bridge = {
     /** Phase 0 demo project path, pulled from main via IPC. */
     getDemoProjectPath: (): Promise<string | null> =>
       ipcRenderer.invoke('hfui:env:demoProjectPath'),
+  },
+  project: {
+    load: (rootPath: string): Promise<ProjectLoadResult> =>
+      ipcRenderer.invoke('hfui:project:load', rootPath),
   },
   preview: {
     start: (payload: PreviewStartPayload): Promise<PreviewStartResult> =>
