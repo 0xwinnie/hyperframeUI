@@ -1,17 +1,65 @@
 /*
- * Phase 0 baseline styles. The full Moss theme + Tailwind setup lands in
- * P0.4. For now we only need enough CSS to render a centered splash with
- * the right font stack and the bg-0 backdrop the spec calls for.
+ * Phase 0.4-0.6 styles. Every visual token referenced by components is a
+ * CSS custom property so applyTheme() can swap palettes at runtime without
+ * touching individual elements.
+ *
+ * Defaults below mirror the Moss palette so first paint matches the theme
+ * applyTheme() will install once React mounts.
  */
 
 :root {
-  /* Moss surfaces (subset; full token map arrives in P0.4) */
+  /* Moss palette defaults — overwritten at runtime via applyTheme(). */
   --bg-0: #1c1d22;
   --bg-1: #24262c;
+  --bg-2: #2d2f37;
+  --bg-3: #383b45;
+  --bg-player: #0e0f12;
+
   --fg-1: #ebecee;
+  --fg-2: #bcbfc5;
   --fg-3: #8c919a;
   --fg-4: #666b75;
+  --fg-5: #4a4e58;
+
+  --line-1: rgba(220, 225, 235, 0.06);
+  --line-2: rgba(220, 225, 235, 0.10);
+  --line-3: rgba(220, 225, 235, 0.18);
+
   --accent: #7aa589;
+  --accent-2: #94bba2;
+  --accent-soft: rgba(122, 165, 137, 0.13);
+  --accent-line: rgba(122, 165, 137, 0.36);
+  --accent-ink: #c8e0d2;
+
+  --violet: #a89dd1;
+  --violet-soft: rgba(168, 157, 209, 0.13);
+  --green: #86b59a;
+  --green-soft: rgba(134, 181, 154, 0.14);
+  --amber: #d9b366;
+  --amber-soft: rgba(217, 179, 102, 0.14);
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  /* Radii */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  /* Shadows */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.30), 0 1px 1px rgba(0, 0, 0, 0.20);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-3: 0 18px 40px rgba(0, 0, 0, 0.50), 0 4px 12px rgba(0, 0, 0, 0.30);
+
+  /* Motion */
+  --t-fast: 120ms cubic-bezier(0.2, 0.7, 0.3, 1);
+  --t-med: 240ms cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 
 * {
@@ -31,6 +79,7 @@ body,
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
 .mono {
@@ -38,37 +87,343 @@ body,
   font-feature-settings: 'tnum' 1;
 }
 
-.boot-splash {
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--line-3);
+}
+
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── App shell ───────────────────────────────────────────────────────── */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.shell__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────── */
+
+.topbar {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  -webkit-app-region: drag;
+}
+
+.topbar button,
+.topbar a,
+.topbar input {
+  -webkit-app-region: no-drag;
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* Leave room for macOS traffic-light buttons (hidden inset style). */
+  margin-left: 76px;
+}
+
+.topbar__mark {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 2px 6px var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar__wordmark {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--fg-1);
+  letter-spacing: -0.1px;
+}
+
+.topbar__divider {
+  width: 1px;
+  height: 18px;
+  background: var(--line-2);
+}
+
+.topbar__project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  background: transparent;
+  border: 1px solid var(--line-1);
+  color: var(--fg-1);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+
+.topbar__project:hover {
+  background: var(--bg-2);
+  border-color: var(--line-2);
+}
+
+.topbar__meta {
+  font-size: 11px;
+  color: var(--fg-4);
+}
+
+.topbar__spacer {
+  flex: 1;
+}
+
+.btn {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background var(--t-fast), border-color var(--t-fast),
+    box-shadow var(--t-fast);
+}
+
+.btn--ghost {
+  padding: 4px 9px;
+  background: transparent;
+  border: 1px solid var(--line-2);
+  color: var(--fg-2);
+}
+
+.btn--ghost:hover {
+  background: var(--bg-2);
+  border-color: var(--line-3);
+  color: var(--fg-1);
+}
+
+.btn--primary {
+  padding: 5px 12px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  border: 0;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px var(--accent-soft);
+}
+
+.btn--primary:hover {
+  background: var(--accent-2);
+}
+
+/* ── Left rail ───────────────────────────────────────────────────────── */
+
+.leftrail {
+  width: 72px;
+  flex-shrink: 0;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 0;
+  gap: 4px;
+}
+
+.leftrail__item {
+  position: relative;
+  width: 56px;
+  height: 60px;
+  border-radius: var(--r-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-3);
+  font: inherit;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  gap: 12px;
-  user-select: none;
+  gap: 4px;
+  transition: background var(--t-fast), color var(--t-fast),
+    border-color var(--t-fast);
 }
 
-.boot-splash__mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent), #94bba2);
-  box-shadow: 0 6px 18px rgba(122, 165, 137, 0.35);
+.leftrail__item:hover {
+  color: var(--fg-2);
+  background: var(--bg-2);
 }
 
-.boot-splash__title {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+.leftrail__item.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent-2);
 }
 
-.boot-splash__subtitle {
-  font-size: 12px;
-  color: var(--fg-3);
-}
-
-.boot-splash__meta {
+.leftrail__label {
   font-size: 10px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.leftrail__item.is-active .leftrail__label {
+  color: var(--accent-ink);
+}
+
+.leftrail__badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.leftrail__indicator {
+  position: absolute;
+  left: -1px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+.leftrail__spacer {
+  flex: 1;
+}
+
+.leftrail__settings {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: transparent;
+  border: 0;
   color: var(--fg-4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.leftrail__settings:hover {
+  color: var(--fg-2);
+  background: var(--bg-2);
+}
+
+/* ── Side panel (chat / media / audio host) ──────────────────────────── */
+
+.sidepanel {
+  width: 360px;
+  flex-shrink: 0;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line-2);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sidepanel__header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line-1);
+}
+
+.sidepanel__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.sidepanel__hint {
   margin-top: 4px;
+  font-size: 11px;
+  color: var(--fg-4);
+}
+
+.sidepanel__body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Player + Timeline placeholders ──────────────────────────────────── */
+
+.player-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-0);
+  min-width: 0;
+}
+
+.player-placeholder__frame {
+  width: min(640px, 70%);
+  aspect-ratio: 16 / 9;
+  background: var(--bg-player);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-2);
+}
+
+.player-placeholder__caption {
+  font-size: 11px;
+  color: var(--fg-4);
+}
+
+.timeline-placeholder {
+  flex-shrink: 0;
+  height: 220px;
+  background: var(--bg-1);
+  border-top: 1px solid var(--line-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeline-placeholder__label {
+  font-size: 11px;
+  color: var(--fg-4);
 }
