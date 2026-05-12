@@ -184,13 +184,23 @@ export interface CompositionForEmbed {
  * To keep relative asset URLs working inside the srcdoc'd document, we
  * inject a `<base href="${projectServerUrl}/">` in <head>. The runtime
  * script tag is appended before </body> as before.
+ *
+ * Returns null when the project has no index.html yet (fresh "New project"
+ * folder, or one whose composition was deleted). The renderer treats this
+ * as a normal onboarding state, not an error.
  */
-export function readCompositionForEmbed(): CompositionForEmbed {
+export function readCompositionForEmbed(): CompositionForEmbed | null {
   if (!active) {
     throw new Error('Project server is not running');
   }
   const indexPath = path.join(active.root, 'index.html');
-  const raw = readFileSync(indexPath, 'utf8');
+  let raw: string;
+  try {
+    raw = readFileSync(indexPath, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw err;
+  }
   const withBase = injectBase(raw, `${active.url}/`);
   const withRuntime = injectHyperframesRuntime(withBase);
   return {

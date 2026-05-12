@@ -957,6 +957,93 @@ button:focus-visible,
   color: var(--accent-ink);
 }
 
+/* ── Empty project onboarding guide ──────────────────────────────────── */
+
+.player__guide {
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 32px;
+  text-align: center;
+}
+
+.player__guide-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player__guide-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg-1);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.player__guide-path {
+  font-size: 11px;
+  color: var(--fg-4);
+  padding: 6px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.player__guide-steps {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.player__guide-steps li {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--fg-2);
+  line-height: 1.5;
+}
+
+.player__guide-step-num {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--fg-2);
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player__guide-quote {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: var(--bg-2);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-style: italic;
+  color: var(--fg-1);
+}
+
 .timeline-placeholder {
   flex-shrink: 0;
   height: 220px;

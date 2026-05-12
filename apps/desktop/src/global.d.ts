@@ -37,7 +37,7 @@ declare global {
   }
 
   type PreviewStartResult =
-    | { ok: true; url: string; projectPath: string; compositionHtml: string }
+    | { ok: true; url: string; projectPath: string; compositionHtml: string | null }
     | { ok: false; error: string };
 
   type AgentRole = 'user' | 'assistant' | 'system' | 'tool';

@@ -1,5 +1,6 @@
 import '@hyperframes/player';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Plus } from '../icons';
 import { useProjectStore } from '../store/project';
 import { TransportBar } from './TransportBar';
 
@@ -12,7 +13,7 @@ import { TransportBar } from './TransportBar';
 type PreviewState =
   | { kind: 'idle' }
   | { kind: 'starting'; projectPath: string }
-  | { kind: 'serving'; url: string; projectPath: string; compositionHtml: string }
+  | { kind: 'serving'; url: string; projectPath: string; compositionHtml: string | null }
   | { kind: 'error'; message: string };
 
 interface PlayerElement extends HTMLElement {
@@ -222,7 +223,9 @@ function captionFor(
     case 'starting':
       return 'starting preview server…';
     case 'serving':
-      return preview.url.replace(/^https?:\/\//, '');
+      return preview.compositionHtml === null
+        ? 'empty project · waiting for clips'
+        : preview.url.replace(/^https?:\/\//, '');
     case 'error':
       return 'preview error';
   }
@@ -267,6 +270,15 @@ function Placeholder({
     return <div className="player__placeholder mono">Parsing project…</div>;
   }
 
+  // Project is ready but there's no composition yet — the onboarding state.
+  if (
+    projectStatus.kind === 'ready' &&
+    preview.kind === 'serving' &&
+    preview.compositionHtml === null
+  ) {
+    return <EmptyProjectGuide projectRoot={projectStatus.project.root} />;
+  }
+
   if (preview.kind === 'error') {
     return (
       <div className="player__placeholder">
@@ -277,4 +289,33 @@ function Placeholder({
   }
 
   return <div className="player__placeholder mono">Booting preview server…</div>;
+}
+
+function EmptyProjectGuide({ projectRoot }: { projectRoot: string }): JSX.Element {
+  return (
+    <div className="player__guide">
+      <div className="player__guide-icon" aria-hidden>
+        <Plus size={20} />
+      </div>
+      <h2 className="player__guide-title">Drop your raw clips into this project</h2>
+      <p className="player__guide-path mono">{projectRoot}</p>
+      <ol className="player__guide-steps">
+        <li>
+          <span className="player__guide-step-num mono">1</span>
+          Add the videos you want to edit — either drag them into the folder above (Finder), or use
+          the <strong>Media</strong> tab on the left to import / remove files from inside HyperframeUI.
+        </li>
+        <li>
+          <span className="player__guide-step-num mono">2</span>
+          Switch to the <strong>Claude</strong> tab and describe what you want — e.g.
+          <span className="player__guide-quote">"Make a rough cut from these clips with captions."</span>
+        </li>
+        <li>
+          <span className="player__guide-step-num mono">3</span>
+          Claude calls Hyperframes (transcribe, build, render) and the preview appears here as soon
+          as the composition is ready.
+        </li>
+      </ol>
+    </div>
+  );
 }
