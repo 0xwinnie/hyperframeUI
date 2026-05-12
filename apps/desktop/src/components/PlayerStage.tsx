@@ -65,7 +65,6 @@ export function PlayerStage(): JSX.Element {
         {status.kind !== 'ready' && (
           <Placeholder
             status={status}
-            projectStatusKind={projectStatus.kind}
             onPick={() => {
               void pickAndLoad();
             }}
@@ -94,14 +93,29 @@ function captionFor(s: Status, projectKind: ReturnType<typeof useProjectStore.ge
 
 function Placeholder({
   status,
-  projectStatusKind,
   onPick,
 }: {
   status: Status;
-  projectStatusKind: ReturnType<typeof useProjectStore.getState>['status']['kind'];
   onPick: () => void;
 }): JSX.Element {
-  if (projectStatusKind === 'idle') {
+  const projectStatus = useProjectStore((s) => s.status);
+
+  if (projectStatus.kind === 'error') {
+    return (
+      <div className="player__placeholder">
+        <p className="mono">Couldn't open this folder as a Hyperframes project</p>
+        <p className="player__placeholder-detail mono">{projectStatus.error}</p>
+        <p className="player__placeholder-hint mono">
+          Tip: pick the folder that contains <code>index.html</code> — that's the project root.
+        </p>
+        <button type="button" className="btn btn--primary" onClick={onPick}>
+          Open another folder…
+        </button>
+      </div>
+    );
+  }
+
+  if (projectStatus.kind === 'idle') {
     return (
       <div className="player__placeholder">
         <p className="mono">No project open</p>
@@ -111,11 +125,19 @@ function Placeholder({
       </div>
     );
   }
-  if (projectStatusKind === 'loading') {
+
+  if (projectStatus.kind === 'loading') {
     return <div className="player__placeholder mono">Parsing project…</div>;
   }
+
   if (status.kind === 'error') {
-    return <div className="player__placeholder mono">{status.message}</div>;
+    return (
+      <div className="player__placeholder">
+        <p className="mono">Hyperframes preview failed</p>
+        <p className="player__placeholder-detail mono">{status.message}</p>
+      </div>
+    );
   }
+
   return <div className="player__placeholder mono">Booting Hyperframes preview…</div>;
 }

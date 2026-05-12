@@ -199,6 +199,10 @@ button:focus-visible,
 .topbar__meta {
   font-size: 11px;
   color: var(--fg-4);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 480px;
 }
 
 .topbar__spacer {
@@ -629,9 +633,9 @@ button:focus-visible,
 }
 
 .player__placeholder {
-  max-width: 380px;
+  max-width: 480px;
   font-size: 12px;
-  color: var(--fg-4);
+  color: var(--fg-2);
   text-align: center;
   line-height: 1.5;
   display: flex;
@@ -642,6 +646,30 @@ button:focus-visible,
 
 .player__placeholder p {
   margin: 0;
+}
+
+.player__placeholder-detail {
+  font-size: 11px;
+  color: var(--fg-4);
+  word-break: break-all;
+  padding: 8px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  max-width: 100%;
+}
+
+.player__placeholder-hint {
+  font-size: 11px;
+  color: var(--fg-3);
+}
+
+.player__placeholder code {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  background: var(--bg-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--accent-ink);
 }
 
 .timeline-placeholder {
