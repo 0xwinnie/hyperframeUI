@@ -1,5 +1,10 @@
 import { ipcMain } from 'electron';
-import { startProjectServer, stopActive, type ProjectServer } from '../project-server';
+import {
+  readCompositionForEmbed,
+  startProjectServer,
+  stopActive,
+  type ProjectServer,
+} from '../project-server';
 
 let active: ProjectServer | null = null;
 
@@ -8,21 +13,22 @@ export type PreviewStartPayload = {
 };
 
 export type PreviewStartResult =
-  | { ok: true; url: string; projectPath: string }
+  | { ok: true; url: string; projectPath: string; compositionHtml: string }
   | { ok: false; error: string };
 
 // IPC: hfui:preview:start
 //   Spawns a per-project static file server scoped to the project root and
-//   returns its base URL. @hyperframes/player loads `${url}/index.html` from
-//   inside its shadow-DOM iframe, with assets resolving via relative paths
-//   against the same origin.
+//   returns:
+//     - url: base URL of the static server (assets resolve here)
+//     - compositionHtml: index.html prepared for srcdoc embedding (base href
+//       inserted so relative URLs resolve against `url`, runtime script
+//       injected so @hyperframes/player's polling can talk to the timeline)
 export function registerPreviewIpc(): void {
   ipcMain.handle(
     'hfui:preview:start',
     async (_event, payload: PreviewStartPayload): Promise<PreviewStartResult> => {
       console.log('[hfui] preview:start', payload);
       try {
-        // If the user opened a different project, replace the running server.
         if (active && active.root !== payload.projectPath) {
           await active.close();
           active = null;
@@ -30,7 +36,13 @@ export function registerPreviewIpc(): void {
         if (!active) {
           active = await startProjectServer(payload.projectPath);
         }
-        return { ok: true, url: active.url, projectPath: active.root };
+        const composition = readCompositionForEmbed();
+        return {
+          ok: true,
+          url: active.url,
+          projectPath: active.root,
+          compositionHtml: composition.html,
+        };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         console.error('[hfui] preview:start failed:', message);

@@ -16,6 +16,7 @@ declare global {
       'hyperframes-player': React.DetailedHTMLProps<
         React.HTMLAttributes<HTMLElement> & {
           src?: string;
+          srcdoc?: string;
           controls?: boolean | '';
           autoplay?: boolean | '';
           muted?: boolean | '';
@@ -36,7 +37,7 @@ declare global {
   }
 
   type PreviewStartResult =
-    | { ok: true; url: string; projectPath: string }
+    | { ok: true; url: string; projectPath: string; compositionHtml: string }
     | { ok: false; error: string };
 
   type AgentRole = 'user' | 'assistant' | 'system' | 'tool';

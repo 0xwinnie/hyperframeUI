@@ -12,7 +12,7 @@ import { TransportBar } from './TransportBar';
 type PreviewState =
   | { kind: 'idle' }
   | { kind: 'starting'; projectPath: string }
-  | { kind: 'serving'; url: string; projectPath: string }
+  | { kind: 'serving'; url: string; projectPath: string; compositionHtml: string }
   | { kind: 'error'; message: string };
 
 interface PlayerElement extends HTMLElement {
@@ -60,7 +60,12 @@ export function PlayerStage(): JSX.Element {
       const result = await bridge.preview.start({ projectPath: activePath });
       if (cancelled) return;
       if (result.ok) {
-        setPreview({ kind: 'serving', url: result.url, projectPath: result.projectPath });
+        setPreview({
+          kind: 'serving',
+          url: result.url,
+          projectPath: result.projectPath,
+          compositionHtml: result.compositionHtml,
+        });
       } else {
         setPreview({ kind: 'error', message: result.error });
       }
@@ -71,27 +76,35 @@ export function PlayerStage(): JSX.Element {
   }, [activePath]);
 
   // Reset playback state whenever the loaded composition changes.
-  const compositionSrc = preview.kind === 'serving' ? `${preview.url}/index.html` : null;
+  const compositionHtml = preview.kind === 'serving' ? preview.compositionHtml : null;
   useEffect(() => {
     setReady(false);
     setPaused(true);
     setCurrentTime(0);
     setDuration(0);
-  }, [compositionSrc]);
+  }, [compositionHtml]);
 
   // Hook into player events. We treat the element as the source of truth and
   // mirror only what the UI needs into React state.
   useEffect(() => {
     const el = playerRef.current;
-    if (!el || !compositionSrc) return;
+    if (!el || !compositionHtml) return;
 
+    console.log('[player] attaching listeners to', el, 'srcdoc bytes=', compositionHtml.length);
     const onReady = (event: Event): void => {
       const detail = (event as ReadyEvent).detail;
+      console.log('[player] ready', detail);
       setReady(true);
       setDuration(detail.duration ?? 0);
     };
-    const onPlay = (): void => setPaused(false);
-    const onPause = (): void => setPaused(true);
+    const onPlay = (): void => {
+      console.log('[player] play');
+      setPaused(false);
+    };
+    const onPause = (): void => {
+      console.log('[player] pause');
+      setPaused(true);
+    };
     const onTimeUpdate = (event: Event): void => {
       const detail = (event as TimeUpdateEvent).detail;
       setCurrentTime(detail.currentTime ?? 0);
@@ -99,6 +112,7 @@ export function PlayerStage(): JSX.Element {
     const onEnded = (): void => setPaused(true);
     const onError = (event: Event): void => {
       const detail = (event as CustomEvent<{ message: string }>).detail;
+      console.error('[player] error event:', JSON.stringify(detail));
       setPreview({ kind: 'error', message: detail?.message ?? 'player error' });
     };
 
@@ -117,7 +131,7 @@ export function PlayerStage(): JSX.Element {
       el.removeEventListener('ended', onEnded);
       el.removeEventListener('error', onError);
     };
-  }, [compositionSrc]);
+  }, [compositionHtml]);
 
   const onPlayPause = useCallback(() => {
     const el = playerRef.current;
@@ -152,10 +166,10 @@ export function PlayerStage(): JSX.Element {
       </header>
 
       <div className="player__stage">
-        {compositionSrc ? (
+        {compositionHtml ? (
           <hyperframes-player
             ref={playerRef as unknown as React.RefObject<HTMLElement>}
-            src={compositionSrc}
+            srcdoc={compositionHtml}
             className="player__component"
           />
         ) : (
@@ -168,7 +182,7 @@ export function PlayerStage(): JSX.Element {
         )}
       </div>
 
-      {compositionSrc && (
+      {compositionHtml && (
         <TransportBar
           ready={ready}
           paused={paused}

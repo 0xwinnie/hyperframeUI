@@ -1,6 +1,15 @@
 import { createServer, type Server } from 'node:http';
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+
+// The Hyperframes runtime — auto-injected by @hyperframes/player into
+// same-origin iframes. When the player's iframe is cross-origin to the
+// renderer (our case: 127.0.0.1:<server> vs localhost:5173) the player
+// cannot reach in to inject this script, so we inject it server-side at
+// the source. Once loaded, the runtime postMessages the timeline state
+// out of the iframe so the player can drive play/pause/seek.
+const RUNTIME_SCRIPT_TAG =
+  '<script src="https://cdn.jsdelivr.net/npm/@hyperframes/core/dist/hyperframe.runtime.iife.js"></script>';
 
 // Lightweight static file server scoped to a single project root. Replaces
 // the previous "iframe the entire hyperframes preview Studio" shortcut —
@@ -69,6 +78,21 @@ export async function startProjectServer(projectRoot: string): Promise<ProjectSe
 
       const ext = path.extname(absPath).toLowerCase();
       const contentType = MIME[ext] ?? 'application/octet-stream';
+
+      // For composition HTML files, inject the Hyperframes runtime so the
+      // cross-origin player can talk to the iframe via postMessage.
+      if (ext === '.html' || ext === '.htm') {
+        const raw = readFileSync(absPath, 'utf8');
+        const injected = injectHyperframesRuntime(raw);
+        const buf = Buffer.from(injected, 'utf8');
+        res.writeHead(200, {
+          'Content-Type': contentType,
+          'Content-Length': buf.length,
+          'Cache-Control': 'no-cache',
+        });
+        res.end(buf);
+        return;
+      }
       // Range requests matter for <video>/<audio>; Hyperframes media tags
       // resume gracefully when the server supports them.
       const range = req.headers['range'];
@@ -140,4 +164,54 @@ export async function stopActive(): Promise<void> {
       resolve();
     });
   });
+}
+
+export interface CompositionForEmbed {
+  html: string;
+  assetBaseUrl: string;
+}
+
+/**
+ * Read index.html and prepare it for embedding via `<hyperframes-player srcdoc=…>`.
+ *
+ * Why srcdoc rather than src: @hyperframes/player polls the iframe's
+ * contentWindow directly for `__timelines` and friends. That access is
+ * silently blocked by the same-origin policy when the iframe loads
+ * cross-origin from our renderer (Vite dev on localhost:5173 vs the
+ * project server on 127.0.0.1:<port>). srcdoc iframes inherit the parent's
+ * origin, so the same poll succeeds.
+ *
+ * To keep relative asset URLs working inside the srcdoc'd document, we
+ * inject a `<base href="${projectServerUrl}/">` in <head>. The runtime
+ * script tag is appended before </body> as before.
+ */
+export function readCompositionForEmbed(): CompositionForEmbed {
+  if (!active) {
+    throw new Error('Project server is not running');
+  }
+  const indexPath = path.join(active.root, 'index.html');
+  const raw = readFileSync(indexPath, 'utf8');
+  const withBase = injectBase(raw, `${active.url}/`);
+  const withRuntime = injectHyperframesRuntime(withBase);
+  return {
+    html: withRuntime,
+    assetBaseUrl: `${active.url}/`,
+  };
+}
+
+/** Inject the Hyperframes runtime script just before </body>, or at the end
+ *  of the document if no </body> is present. Idempotent — skips injection
+ *  if the runtime is already referenced anywhere in the document. */
+function injectHyperframesRuntime(html: string): string {
+  if (html.includes('hyperframe.runtime')) return html;
+  const closingBody = html.lastIndexOf('</body>');
+  if (closingBody === -1) return html + '\n' + RUNTIME_SCRIPT_TAG;
+  return html.slice(0, closingBody) + RUNTIME_SCRIPT_TAG + html.slice(closingBody);
+}
+
+/** Insert a `<base href="${href}">` tag inside <head>, immediately after
+ *  the opening tag. Idempotent — skips if a base tag already exists. */
+function injectBase(html: string, href: string): string {
+  if (/<base\b/i.test(html)) return html;
+  return html.replace(/<head(\s[^>]*)?>/i, (match) => `${match}\n    <base href="${href}">`);
 }
